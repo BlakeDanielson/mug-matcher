@@ -1,17 +1,29 @@
 # Technology Stack
 
 ## Frontend
-- To be determined
+- Next.js (App Router) - React framework
+- TypeScript - Type-safe JavaScript
+- Tailwind CSS - Utility-first CSS framework
+- shadcn/ui - Accessible UI components based on Radix UI
+- React Hook Form - Form handling
+- Lucide React - Icon library
+- next-themes - Theme handling (dark/light mode)
 
 ## Backend
-- To be determined
+- Next.js API Routes - Serverless backend endpoints
+- SQLite - Lightweight database (through better-sqlite3)
+- CSV parsing with PapaParse for data handling
 
 ## Database
-- To be determined
+- SQLite for structured data storage
+- CSV files for initial data import
 
 ## Infrastructure
 - GitHub for version control
-- To be determined for deployment
+- Vercel for deployment (recommended in Next.js docs)
 
 ## Libraries & Dependencies
-- To be determined 
+- Radix UI - Headless UI primitives
+- React Hook Form - Form validation
+- Zod - Schema validation
+- Tailwind CSS - Styling 
