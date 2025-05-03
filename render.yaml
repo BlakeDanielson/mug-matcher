@@ -6,34 +6,13 @@ services:
     buildCommand: |
       # Pre-build directory verification
       echo "Verifying directories..."
-      # Create the data directory in the project directory
-      mkdir -p /opt/render/project/src/data
       
-      if [ ! -d "$SOURCE_DATA_DIR" ]; then
-        echo "Error: Source data directory not found: $SOURCE_DATA_DIR"
-        exit 1
-      fi
-      
-      # Note: sorted_mugshots.csv is now downloaded automatically during the build process
-      # instead of being transferred manually using the wormhole CLI tool after deployment
+      # The CSV file is now included in the GitHub repository in the data directory
+      # No need to download or transfer it separately
       
       # Install dependencies
       echo "Installing dependencies..."
       npm install
-      
-      # Run the download script to get the CSV file
-      echo "Downloading CSV file..."
-      node scripts/download-data.js
-      if [ $? -ne 0 ]; then
-        echo "Warning: Failed to download CSV file. Build will continue, but some features may not work correctly."
-      fi
-      
-      # Run data copy script for any other data files
-      echo "Copying other data files..."
-      node scripts/copy-data.js
-      if [ $? -ne 0 ]; then
-        echo "Warning: Failed to copy data files. Build will continue, but some features may not work correctly."
-      fi
       
       # Validate CSV content
       echo "Validating CSV files..."
@@ -53,27 +32,20 @@ services:
         interval: 30s
         timeout: 10s
         grace_period: 60s
-      # Health check for the CSV file (now downloaded during build)
-      - path: /opt/render/project/src/data/sorted_mugshots.csv
+      # Health check for the CSV file (now included in the repository)
+      - path: ./data/sorted_mugshots.csv
         type: file_check
         interval: 60s
       - path: /opt/render/project/src
         type: disk_check
         threshold_percent: 90
     envVars:
-      # Path to the CSV file (now downloaded during build)
+      # Path to the CSV file (now included in the repository)
       - key: MUGSHOTS_CSV_PATH
-        value: /opt/render/project/src/data/sorted_mugshots.csv
-        sync: false
-      # URL to download the CSV file from (set this in the Render dashboard)
-      - key: MUGSHOTS_CSV_URL
+        value: ./data/sorted_mugshots.csv
         sync: false
       - key: NODE_ENV
         value: production
-      - key: SOURCE_DATA_DIR
-        value: /opt/render/project/src/mugshotscripts
-      - key: DATA_DIR
-        value: /opt/render/project/src/data
       - key: ENABLE_VERBOSE_LOGGING
         value: "true"
       - key: RENDER_ENVIRONMENT

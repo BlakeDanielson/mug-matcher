@@ -1,3 +1,4 @@
+
 # Mugshot Matcher
 
 A challenging web-based game where players test their detective skills by matching mugshots to their corresponding crimes. This interactive experience combines visual recognition with criminal justice knowledge, creating an engaging way to learn about law enforcement and criminal profiling. Built with [Next.js](https://nextjs.org) and bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
@@ -43,8 +44,7 @@ cp .env.example .env.local
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| MUGSHOTS_CSV_PATH | Path to the CSV file containing mugshot data | `../mugshotscripts/sorted_mugshots.csv` (local) or `/opt/render/project/src/data/sorted_mugshots.csv` (Render) |
-| MUGSHOTS_CSV_URL | URL to download the CSV file from (for Render deployment) | `https://example.com/secure/sorted_mugshots.csv` |
+| MUGSHOTS_CSV_PATH | Path to the CSV file containing mugshot data | `../mugshotscripts/sorted_mugshots.csv` (local) or `./data/sorted_mugshots.csv` (Render) |
 | NODE_ENV | Node environment | `development`, `production`, or `test` |
 
 ## Deployment

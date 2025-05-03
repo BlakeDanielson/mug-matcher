@@ -1,26 +1,16 @@
 /**
  * Wrapper script for building the application
- * This script downloads and copies data files before running the Next.js build
- * Note: sorted_mugshots.csv is now downloaded automatically during the build process
- * instead of being transferred manually using the wormhole CLI tool after deployment
+ * This script copies data files before running the Next.js build
+ * Note: sorted_mugshots.csv is now included in the repository
+ * and does not need to be downloaded or transferred separately
  */
 
 const { spawn } = require('child_process');
 const path = require('path');
 
-// First, download the CSV file from the secure URL
-console.log('Downloading CSV file for build...');
-const { downloadCsvFile } = require('./download-data');
-
-// Then, run the copy-data script to ensure other data files are available
+// Run the copy-data script to ensure data files are available
 console.log('Copying data files for build...');
 require('./copy-data');
-
-// Run the download process
-downloadCsvFile().catch(error => {
-  console.error(`Error downloading CSV file: ${error.message}`);
-  console.warn('Continuing build process despite download error...');
-});
 
 // Then run the Next.js build
 console.log('Starting Next.js build...');

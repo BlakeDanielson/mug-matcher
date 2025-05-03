@@ -11,7 +11,6 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "copy-data": "node scripts/copy-data.js",
-    "download-data": "node scripts/download-data.js",
     "validate-data": "node scripts/validate-data.js"
   },
   "dependencies": {
