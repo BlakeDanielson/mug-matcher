@@ -3,9 +3,43 @@ services:
     name: mugshot-matcher
     env: node
     plan: starter
-    buildCommand: npm install; npm run build
+    buildCommand: |
+      # Pre-build data directory check
+      echo "Validating data directories..."
+      if [ ! -d "/data" ]; then
+        echo "Error: /data directory not found"
+        exit 1
+      fi
+      if [ ! -d "$SOURCE_DATA_DIR" ]; then
+        echo "Error: Source data directory not found"
+        exit 1
+      fi
+      
+      # Install dependencies and build
+      npm install
+      npm run build
+      
+      # Post-build data validation
+      echo "Validating CSV files..."
+      node scripts/validate-data.js
+      if [ $? -ne 0 ]; then
+        echo "Error: CSV validation failed"
+        exit 1
+      fi
     startCommand: npm start
     healthCheckPath: /api/inmates
+    healthCheckTimeout: 60
+    healthCheck:
+      - path: /api/inmates
+        interval: 30s
+        timeout: 10s
+        grace_period: 60s
+      - path: /data/sorted_mugshots.csv
+        type: file_check
+        interval: 60s
+      - path: /data
+        type: disk_check
+        threshold_percent: 90
     envVars:
       - key: MUGSHOTS_CSV_PATH
         value: /data/sorted_mugshots.csv
@@ -17,6 +51,10 @@ services:
         value: production
       - key: SOURCE_DATA_DIR
         value: /opt/render/project/src/mugshotscripts
+      - key: DATA_DIR
+        value: /data
+      - key: ENABLE_VERBOSE_LOGGING
+        value: "true"
       - key: RENDER_ENVIRONMENT
         value: "true"
     
@@ -38,3 +76,20 @@ services:
       name: data
       mountPath: /data
       sizeGB: 1
+      permissions: "0755"
+      backup:
+        enabled: true
+        schedule: "0 0 * * *"
+        retention: 7d
+
+    # Logging configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
+      destination:
+        type: papertrail
+        retention: 7d
+        verbosity: info
