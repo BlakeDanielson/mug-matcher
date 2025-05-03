@@ -43,18 +43,20 @@ cp .env.example .env.local
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| MUGSHOTS_CSV_PATH | Path to the CSV file containing mugshot data | `../mugshotscripts/sorted_mugshots.csv` (local) or `/data/sorted_mugshots.csv` (Render) |
+| MUGSHOTS_CSV_PATH | Path to the CSV file containing mugshot data | `../mugshotscripts/sorted_mugshots.csv` (local) or `/opt/render/project/src/data/sorted_mugshots.csv` (Render) |
+| MUGSHOTS_CSV_URL | URL to download the CSV file from (for Render deployment) | `https://example.com/secure/sorted_mugshots.csv` |
 | NODE_ENV | Node environment | `development`, `production`, or `test` |
 
 ## Deployment
 
 ### Deploy on Render
 
-This application is configured for deployment on [Render](https://render.com) using the `render.yaml` configuration file. The application uses a disk mount at `/data` to store and access the mugshot data files.
+This application is configured for deployment on [Render](https://render.com) using the `render.yaml` configuration file. The application now automatically downloads the CSV file during the build process instead of requiring manual transfer after deployment.
 
 Key configuration for Render deployment:
 - The application uses environment variables to locate data files
-- CSV and database files are stored on a mounted disk at `/data`
+- CSV files are stored in the project directory at `/opt/render/project/src/data`
+- The application automatically downloads the CSV file from a secure URL during the build process
 - The application automatically detects whether it's running in development or production mode
 - Custom build and start scripts handle data file management
 
@@ -65,12 +67,13 @@ This application uses CSV files to store mugshot data. The data management proce
 ### Data Directory Structure
 
 - In development: Data files are stored in the `data` directory in the project root
-- In production (Render): Data files are stored in the mounted `/data` directory
+- In production (Render): Data files are stored in the project directory at `/opt/render/project/src/data`
 
 ### Data Management Scripts
 
 | Script | Description |
 |--------|-------------|
+| `npm run download-data` | Downloads the CSV file from a secure URL |
 | `npm run copy-data` | Copies CSV files from source directories to the data directory |
 | `npm run validate-data` | Validates that required data files exist and are not empty |
 
@@ -78,19 +81,20 @@ This application uses CSV files to store mugshot data. The data management proce
 
 During deployment to Render, the following steps are performed:
 
-1. The build script (`npm run build`) runs the copy-data script to ensure data files are available
-2. The build script then runs the Next.js build process
+1. The build script (`npm run build`) runs the download-data script to download the CSV file from a secure URL
+2. The build script then runs the copy-data script to ensure other data files are available
 3. After the build, the data files are validated to ensure they exist and are not empty
 4. The start script (`npm run start`) validates the data files again before starting the Next.js server
 5. If any required data files are missing or empty, the application will fail to start with a helpful error message
 
-### Data Transfer with Wormhole
+### Automatic CSV Download
 
-The `sorted_mugshots.csv` file is now transferred manually after deployment using the wormhole CLI tool:
+The `sorted_mugshots.csv` file is now downloaded automatically during the build process:
 
-1. After the application is deployed to Render, use the wormhole CLI tool to transfer the file to the `/data` directory
-2. The application will automatically detect the file and use it
-3. This approach is more secure and reliable for transferring large data files to the production environment
+1. The application uses the `MUGSHOTS_CSV_URL` environment variable to download the file from a secure URL
+2. The file is downloaded to the project directory at `/opt/render/project/src/data/sorted_mugshots.csv`
+3. The application will automatically detect the file and use it
+4. This approach is more secure and reliable than manual transfer, as it ensures the file is always available after deployment
 
 ### Error Handling
 
@@ -112,10 +116,10 @@ To add or update data files:
 #### For Production Environment (Render):
 1. For most data files, follow the same process as development
 2. For the `sorted_mugshots.csv` file specifically:
-   - Use the wormhole CLI tool to transfer the file directly to the `/data` directory on Render
-   - Example command: `wormhole send /path/to/sorted_mugshots.csv`
-   - Follow the prompts to complete the transfer
-   - The application will automatically detect and use the updated file
+   - Update the secure URL where the file is hosted
+   - Set the `MUGSHOTS_CSV_URL` environment variable in the Render dashboard
+   - Redeploy the application to download the updated file
+   - The application will automatically download and use the updated file during the build process
 
 ### Deploy on Vercel
 

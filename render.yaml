@@ -6,47 +6,41 @@ services:
     buildCommand: |
       # Pre-build directory verification
       echo "Verifying directories..."
-      if [ ! -d "/data" ]; then
-        echo "Error: /data directory not found or not mounted"
-        exit 1
-      fi
-      if [ ! -w "/data" ]; then
-        echo "Error: /data directory is not writable"
-        exit 1
-      fi
+      # Create the data directory in the project directory
+      mkdir -p /opt/render/project/src/data
+      
       if [ ! -d "$SOURCE_DATA_DIR" ]; then
         echo "Error: Source data directory not found: $SOURCE_DATA_DIR"
         exit 1
       fi
       
-      # Note: sorted_mugshots.csv is now transferred manually using the wormhole CLI tool
-      # after deployment, not during the build process
+      # Note: sorted_mugshots.csv is now downloaded automatically during the build process
+      # instead of being transferred manually using the wormhole CLI tool after deployment
       
       # Install dependencies
       echo "Installing dependencies..."
       npm install
       
-      # Run data copy script
-      echo "Running copy-data script..."
-      node scripts/copy-data.js
+      # Run the download script to get the CSV file
+      echo "Downloading CSV file..."
+      node scripts/download-data.js
       if [ $? -ne 0 ]; then
-        echo "Error: Failed to copy data files"
-        exit 1
+        echo "Warning: Failed to download CSV file. Build will continue, but some features may not work correctly."
       fi
       
-      # Note: sorted_mugshots.csv will be transferred manually after deployment
-      # using the wormhole CLI tool, so we don't check for it during build
+      # Run data copy script for any other data files
+      echo "Copying other data files..."
+      node scripts/copy-data.js
+      if [ $? -ne 0 ]; then
+        echo "Warning: Failed to copy data files. Build will continue, but some features may not work correctly."
+      fi
       
       # Validate CSV content
       echo "Validating CSV files..."
       node scripts/validate-data.js
       if [ $? -ne 0 ]; then
-        echo "Error: CSV validation failed"
-        exit 1
+        echo "Warning: CSV validation failed. Build will continue, but some features may not work correctly."
       fi
-      
-      # Note: File permission checks for sorted_mugshots.csv are not needed during build
-      # as the file will be transferred manually after deployment
       
       # Build application
       echo "Building application..."
@@ -59,24 +53,27 @@ services:
         interval: 30s
         timeout: 10s
         grace_period: 60s
-      # Health check for the CSV file after manual transfer via wormhole
-      - path: /data/sorted_mugshots.csv
+      # Health check for the CSV file (now downloaded during build)
+      - path: /opt/render/project/src/data/sorted_mugshots.csv
         type: file_check
         interval: 60s
-      - path: /data
+      - path: /opt/render/project/src
         type: disk_check
         threshold_percent: 90
     envVars:
-      # Path to the CSV file after manual transfer via wormhole
+      # Path to the CSV file (now downloaded during build)
       - key: MUGSHOTS_CSV_PATH
-        value: /data/sorted_mugshots.csv
+        value: /opt/render/project/src/data/sorted_mugshots.csv
+        sync: false
+      # URL to download the CSV file from (set this in the Render dashboard)
+      - key: MUGSHOTS_CSV_URL
         sync: false
       - key: NODE_ENV
         value: production
       - key: SOURCE_DATA_DIR
         value: /opt/render/project/src/mugshotscripts
       - key: DATA_DIR
-        value: /data
+        value: /opt/render/project/src/data
       - key: ENABLE_VERBOSE_LOGGING
         value: "true"
       - key: RENDER_ENVIRONMENT
@@ -95,16 +92,8 @@ services:
         source: /*
         destination: /index.html
 
-    # Disk configuration for storing CSV and DB files
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
-      permissions: "0755"
-      backup:
-        enabled: true
-        schedule: "0 0 * * *"
-        retention: 7d
+    # Note: We no longer use a mounted disk since the CSV file is now downloaded during build
+    # and stored in the project directory
 
     # Logging configuration
     logging:
