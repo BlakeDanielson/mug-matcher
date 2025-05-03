@@ -16,7 +16,7 @@ const REQUIRED_FILES = [
 ];
 
 // Optional files (warn but don't fail if missing)
-
+const OPTIONAL_FILES = []; // Define the missing variable
 
 // Validate that required data files exist
 function validateDataFiles() {
