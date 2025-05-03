@@ -3,7 +3,7 @@ services:
     name: mugshot-matcher
     env: node
     plan: starter
-    buildCommand: npm run build
+    buildCommand: pnpm install --no-frozen-lockfile; pnpm run build
     startCommand: npm start
     healthCheckPath: /api/inmates
     envVars:

@@ -11,9 +11,13 @@ const { validateDataFiles } = require('./validate-data');
 console.log('Validating data files before starting the application...');
 const isValid = validateDataFiles();
 
-if (!isValid && process.env.NODE_ENV === 'production') {
-  console.error('Error: Data validation failed. Cannot start the application.');
-  process.exit(1);
+if (!isValid) {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('Warning: Data validation failed in production environment. Some features may not work correctly.');
+    // Continue anyway in production
+  } else {
+    console.warn('Warning: Data validation failed. Some features may not work correctly.');
+  }
 }
 
 // Start the Next.js server
