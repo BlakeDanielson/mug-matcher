@@ -4,28 +4,63 @@ services:
     env: node
     plan: starter
     buildCommand: |
-      # Pre-build data directory check
-      echo "Validating data directories..."
+      # Pre-build directory verification
+      echo "Verifying directories..."
       if [ ! -d "/data" ]; then
-        echo "Error: /data directory not found"
+        echo "Error: /data directory not found or not mounted"
+        exit 1
+      fi
+      if [ ! -w "/data" ]; then
+        echo "Error: /data directory is not writable"
         exit 1
       fi
       if [ ! -d "$SOURCE_DATA_DIR" ]; then
-        echo "Error: Source data directory not found"
+        echo "Error: Source data directory not found: $SOURCE_DATA_DIR"
         exit 1
       fi
       
-      # Install dependencies and build
-      npm install
-      npm run build
+      # Verify source CSV exists
+      if [ ! -f "$SOURCE_DATA_DIR/sorted_mugshots.csv" ]; then
+        echo "Error: Source CSV file not found: $SOURCE_DATA_DIR/sorted_mugshots.csv"
+        exit 1
+      fi
       
-      # Post-build data validation
+      # Install dependencies
+      echo "Installing dependencies..."
+      npm install
+      
+      # Run data copy script
+      echo "Running copy-data script..."
+      node scripts/copy-data.js
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to copy data files"
+        exit 1
+      fi
+      
+      # Verify CSV was copied successfully
+      if [ ! -f "/data/sorted_mugshots.csv" ]; then
+        echo "Error: CSV file not copied to /data directory"
+        exit 1
+      fi
+      
+      # Validate CSV content
       echo "Validating CSV files..."
       node scripts/validate-data.js
       if [ $? -ne 0 ]; then
         echo "Error: CSV validation failed"
         exit 1
       fi
+      
+      # Check file permissions
+      echo "Checking file permissions..."
+      if [ ! -r "/data/sorted_mugshots.csv" ]; then
+        echo "Error: CSV file is not readable"
+        exit 1
+      fi
+      
+      # Build application
+      echo "Building application..."
+      npm run build
     startCommand: npm start
     healthCheckPath: /api/inmates
     healthCheckTimeout: 60
