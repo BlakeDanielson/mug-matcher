@@ -76,7 +76,6 @@ function copyFileIfExists(sourcePath, destPath) {
 function copyDataFiles() {
   const filesToCopy = [
     'sorted_mugshots.csv',
-    'mugshots.db'  // Include the SQLite database for legacy support
   ];
   
   ensureDataDirExists();

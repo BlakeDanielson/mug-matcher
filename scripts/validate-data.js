@@ -16,9 +16,7 @@ const REQUIRED_FILES = [
 ];
 
 // Optional files (warn but don't fail if missing)
-const OPTIONAL_FILES = [
-  'mugshots.db'  // Legacy SQLite database
-];
+
 
 // Validate that required data files exist
 function validateDataFiles() {
