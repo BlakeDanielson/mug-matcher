@@ -15,9 +15,6 @@ const REQUIRED_FILES = [
   'sorted_mugshots.csv'
 ];
 
-// Optional files (warn but don't fail if missing)
-const OPTIONAL_FILES = []; // Define the missing variable
-
 // Validate that required data files exist
 function validateDataFiles() {
   console.log('Validating data files...');
@@ -84,16 +81,6 @@ function validateDataFiles() {
     } else {
       console.log('Created placeholder files for all missing required files');
     }
-  }
-  
-  // Check optional files
-  const missingOptionalFiles = OPTIONAL_FILES.filter(file => {
-    const filePath = path.join(DATA_DIR, file);
-    return !fs.existsSync(filePath);
-  });
-  
-  if (missingOptionalFiles.length > 0) {
-    console.warn(`Warning: Missing optional data files: ${missingOptionalFiles.join(', ')}`);
   }
   
   // Check file sizes to ensure they're not empty
