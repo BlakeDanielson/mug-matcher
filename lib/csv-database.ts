@@ -78,9 +78,16 @@ async function loadCsvData(): Promise<CsvInmate[]> {
       console.error(`CSV file not found at path: ${csvFilePath}`);
       
       // Provide more helpful error message with potential solutions
-      const errorMessage = process.env.NODE_ENV === 'production'
-        ? `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the mounted /data directory. You may need to run the copy-data script during deployment.`
-        : `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the correct location. You can run 'npm run copy-data' to copy the file to the data directory.`;
+      const isRenderEnvironment = process.env.RENDER_ENVIRONMENT === 'true';
+      let errorMessage = '';
+      
+      if (isRenderEnvironment) {
+        errorMessage = `CSV file not found at path: ${csvFilePath}. This is a Render deployment issue. Make sure the file exists in the mounted /data directory. The copy-data script should run during the build process. Check the build logs for any errors during the copy-data script execution.`;
+      } else if (process.env.NODE_ENV === 'production') {
+        errorMessage = `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the mounted /data directory. You may need to run the copy-data script during deployment.`;
+      } else {
+        errorMessage = `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the correct location. You can run 'npm run copy-data' to copy the file to the data directory.`;
+      }
       
       throw new Error(errorMessage);
     }
@@ -92,7 +99,10 @@ async function loadCsvData(): Promise<CsvInmate[]> {
       console.error('CSV file is empty');
       
       // Provide more helpful error message with potential solutions
-      const errorMessage = process.env.NODE_ENV === 'production'
+      const isRenderEnvironment = process.env.RENDER_ENVIRONMENT === 'true';
+      const errorMessage = isRenderEnvironment
+        ? 'CSV file is empty. This is a Render deployment issue. The copy-data script may have created an empty placeholder file. Check the build logs for any errors during the copy-data script execution.'
+        : process.env.NODE_ENV === 'production'
         ? 'CSV file is empty. Make sure the file contains valid data. You may need to run the copy-data script during deployment.'
         : 'CSV file is empty. Make sure the file contains valid data. You can run \'npm run copy-data\' to copy the file to the data directory.';
       

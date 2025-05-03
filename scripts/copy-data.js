@@ -7,16 +7,33 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-// In production, try to use /data, but fall back to a temp directory in the project if it's not accessible
-const DATA_DIR = process.env.NODE_ENV === 'production'
-  ? (process.env.RENDER_INTERNAL_RESOURCES_DIR || path.join(__dirname, '..', 'temp_data'))
-  : path.join(__dirname, '..', 'data');
+// In Render environment, use /data directory
+// In other production environments, try to use /data, but fall back to a temp directory
+// In development, use a local data directory
+const isRenderEnvironment = process.env.RENDER_ENVIRONMENT === 'true';
+const DATA_DIR = isRenderEnvironment
+  ? '/data'
+  : process.env.NODE_ENV === 'production'
+    ? (process.env.RENDER_INTERNAL_RESOURCES_DIR || path.join(__dirname, '..', 'temp_data'))
+    : path.join(__dirname, '..', 'data');
 const SOURCE_DIRS = [
+  process.env.SOURCE_DATA_DIR,                        // From environment variable (for Render)
   path.join(__dirname, '..', '..', 'mugshotscripts'), // For development environment
   path.join(process.cwd(), '..', 'mugshotscripts'),   // Alternative path for development
   path.join(process.cwd(), 'mugshotscripts'),         // If mugshotscripts is in the project root
   path.join(__dirname, '..', 'data')                  // For local testing
-];
+].filter(Boolean); // Filter out undefined values
+
+// Log environment and configuration
+console.log('Environment variables:');
+console.log(` - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+console.log(` - RENDER_ENVIRONMENT: ${process.env.RENDER_ENVIRONMENT || 'not set'}`);
+console.log(` - SOURCE_DATA_DIR: ${process.env.SOURCE_DATA_DIR || 'not set'}`);
+console.log(` - MUGSHOTS_CSV_PATH: ${process.env.MUGSHOTS_CSV_PATH || 'not set'}`);
+console.log(` - MUGSHOTS_DB_PATH: ${process.env.MUGSHOTS_DB_PATH || 'not set'}`);
+
+// Log the data directory
+console.log(`Using data directory: ${DATA_DIR}`);
 
 // Log the paths we're checking
 console.log('Checking the following source directories:');
@@ -76,6 +93,7 @@ function copyFileIfExists(sourcePath, destPath) {
 function copyDataFiles() {
   const filesToCopy = [
     'sorted_mugshots.csv',
+    'mugshots.db',
   ];
   
   ensureDataDirExists();
