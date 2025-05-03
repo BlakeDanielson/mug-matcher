@@ -30,7 +30,6 @@ console.log(` - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
 console.log(` - RENDER_ENVIRONMENT: ${process.env.RENDER_ENVIRONMENT || 'not set'}`);
 console.log(` - SOURCE_DATA_DIR: ${process.env.SOURCE_DATA_DIR || 'not set'}`);
 console.log(` - MUGSHOTS_CSV_PATH: ${process.env.MUGSHOTS_CSV_PATH || 'not set'}`);
-console.log(` - MUGSHOTS_DB_PATH: ${process.env.MUGSHOTS_DB_PATH || 'not set'}`);
 
 // Log the data directory
 console.log(`Using data directory: ${DATA_DIR}`);
@@ -93,7 +92,6 @@ function copyFileIfExists(sourcePath, destPath) {
 function copyDataFiles() {
   const filesToCopy = [
     'sorted_mugshots.csv',
-    'mugshots.db',
   ];
   
   ensureDataDirExists();
@@ -141,11 +139,6 @@ function copyDataFiles() {
           if (file.endsWith('.csv')) {
             fs.writeFileSync(destPath, 'id,name,booking_date,release_date,charges\n');
             console.log(`Created empty CSV placeholder: ${destPath}`);
-          }
-          // For SQLite DB files, create empty DB
-          else if (file.endsWith('.db')) {
-            fs.writeFileSync(destPath, '');
-            console.log(`Created empty DB placeholder: ${destPath}`);
           }
           // For other files, create empty file
           else {

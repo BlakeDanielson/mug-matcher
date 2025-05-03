@@ -44,7 +44,6 @@ cp .env.example .env.local
 | Variable | Description | Example |
 |----------|-------------|---------|
 | MUGSHOTS_CSV_PATH | Path to the CSV file containing mugshot data | `../mugshotscripts/sorted_mugshots.csv` (local) or `/data/sorted_mugshots.csv` (Render) |
-| MUGSHOTS_DB_PATH | Path to the SQLite database (legacy) | `../mugshotscripts/mugshots.db` (local) or `/data/mugshots.db` (Render) |
 | NODE_ENV | Node environment | `development`, `production`, or `test` |
 
 ## Deployment

@@ -79,9 +79,6 @@ services:
       - key: MUGSHOTS_CSV_PATH
         value: /data/sorted_mugshots.csv
         sync: false
-      - key: MUGSHOTS_DB_PATH
-        value: /data/mugshots.db
-        sync: false
       - key: NODE_ENV
         value: production
       - key: SOURCE_DATA_DIR
