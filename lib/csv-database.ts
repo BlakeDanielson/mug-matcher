@@ -167,11 +167,11 @@ async function loadCsvData(): Promise<CsvInmate[]> {
       let errorMessage = '';
       
       if (isRenderEnvironment) {
-        errorMessage = `CSV file not found at path: ${csvFilePath}. This is a Render deployment issue. Make sure the file exists in the mounted /data directory. The copy-data script should run during the build process. Check the build logs for any errors during the copy-data script execution. Also verify that the MUGSHOTS_CSV_PATH environment variable is correctly set in the Render dashboard.`;
+        errorMessage = `CSV file not found at path: ${csvFilePath}. This is a Render deployment issue. Make sure the file exists in the mounted /data directory. The sorted_mugshots.csv file should be transferred manually using the wormhole CLI tool after deployment, not during the build process. Also verify that the MUGSHOTS_CSV_PATH environment variable is correctly set in the Render dashboard.`;
       } else if (isProduction) {
-        errorMessage = `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the mounted /data directory. You may need to run the copy-data script during deployment. Check that the MUGSHOTS_CSV_PATH environment variable is correctly set.`;
+        errorMessage = `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the mounted /data directory. The sorted_mugshots.csv file should be transferred manually using the wormhole CLI tool after deployment. Check that the MUGSHOTS_CSV_PATH environment variable is correctly set.`;
       } else {
-        errorMessage = `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the correct location. You can run 'npm run copy-data' to copy the file to the data directory. Check that the MUGSHOTS_CSV_PATH environment variable is correctly set in your .env file.`;
+        errorMessage = `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the correct location. You can run 'npm run copy-data' to copy the file to the data directory, or use the wormhole CLI tool to transfer it. Check that the MUGSHOTS_CSV_PATH environment variable is correctly set in your .env file.`;
       }
       
       throw new Error(errorMessage);
@@ -196,10 +196,10 @@ async function loadCsvData(): Promise<CsvInmate[]> {
       
       // Provide more helpful error message with potential solutions
       const errorMessage = isRenderEnvironment
-        ? `CSV file is empty at ${csvFilePath}. This is a Render deployment issue. The copy-data script may have created an empty placeholder file. Check the build logs for any errors during the copy-data script execution. Verify that the source data file exists and has content.`
+        ? `CSV file is empty at ${csvFilePath}. This is a Render deployment issue. The file may not have been properly transferred using the wormhole CLI tool. Verify that the source data file exists and has content, and that the wormhole transfer completed successfully.`
         : isProduction
-        ? `CSV file is empty at ${csvFilePath}. Make sure the file contains valid data. You may need to run the copy-data script during deployment. Verify that the source data file exists and has content.`
-        : `CSV file is empty at ${csvFilePath}. Make sure the file contains valid data. You can run 'npm run copy-data' to copy the file to the data directory. Verify that the source data file exists and has content.`;
+        ? `CSV file is empty at ${csvFilePath}. Make sure the file contains valid data. The sorted_mugshots.csv file should be transferred manually using the wormhole CLI tool after deployment. Verify that the source data file exists and has content, and that the wormhole transfer completed successfully.`
+        : `CSV file is empty at ${csvFilePath}. Make sure the file contains valid data. You can run 'npm run copy-data' to copy the file to the data directory or use the wormhole CLI tool to transfer it. Verify that the source data file exists and has content.`;
       
       throw new Error(errorMessage);
     }

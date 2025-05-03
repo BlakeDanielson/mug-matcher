@@ -19,11 +19,8 @@ services:
         exit 1
       fi
       
-      # Verify source CSV exists
-      if [ ! -f "$SOURCE_DATA_DIR/sorted_mugshots.csv" ]; then
-        echo "Error: Source CSV file not found: $SOURCE_DATA_DIR/sorted_mugshots.csv"
-        exit 1
-      fi
+      # Note: sorted_mugshots.csv is now transferred manually using the wormhole CLI tool
+      # after deployment, not during the build process
       
       # Install dependencies
       echo "Installing dependencies..."
@@ -37,11 +34,8 @@ services:
         exit 1
       fi
       
-      # Verify CSV was copied successfully
-      if [ ! -f "/data/sorted_mugshots.csv" ]; then
-        echo "Error: CSV file not copied to /data directory"
-        exit 1
-      fi
+      # Note: sorted_mugshots.csv will be transferred manually after deployment
+      # using the wormhole CLI tool, so we don't check for it during build
       
       # Validate CSV content
       echo "Validating CSV files..."
@@ -51,12 +45,8 @@ services:
         exit 1
       fi
       
-      # Check file permissions
-      echo "Checking file permissions..."
-      if [ ! -r "/data/sorted_mugshots.csv" ]; then
-        echo "Error: CSV file is not readable"
-        exit 1
-      fi
+      # Note: File permission checks for sorted_mugshots.csv are not needed during build
+      # as the file will be transferred manually after deployment
       
       # Build application
       echo "Building application..."
@@ -69,6 +59,7 @@ services:
         interval: 30s
         timeout: 10s
         grace_period: 60s
+      # Health check for the CSV file after manual transfer via wormhole
       - path: /data/sorted_mugshots.csv
         type: file_check
         interval: 60s
@@ -76,6 +67,7 @@ services:
         type: disk_check
         threshold_percent: 90
     envVars:
+      # Path to the CSV file after manual transfer via wormhole
       - key: MUGSHOTS_CSV_PATH
         value: /data/sorted_mugshots.csv
         sync: false

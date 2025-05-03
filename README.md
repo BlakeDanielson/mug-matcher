@@ -84,6 +84,14 @@ During deployment to Render, the following steps are performed:
 4. The start script (`npm run start`) validates the data files again before starting the Next.js server
 5. If any required data files are missing or empty, the application will fail to start with a helpful error message
 
+### Data Transfer with Wormhole
+
+The `sorted_mugshots.csv` file is now transferred manually after deployment using the wormhole CLI tool:
+
+1. After the application is deployed to Render, use the wormhole CLI tool to transfer the file to the `/data` directory
+2. The application will automatically detect the file and use it
+3. This approach is more secure and reliable for transferring large data files to the production environment
+
 ### Error Handling
 
 The application includes robust error handling for missing or empty data files:
@@ -96,9 +104,18 @@ The application includes robust error handling for missing or empty data files:
 
 To add or update data files:
 
+#### For Development Environment:
 1. Place the new or updated CSV files in the source directory (e.g., `../mugshotscripts/`)
 2. Run `npm run copy-data` to copy the files to the data directory
 3. Restart the application to use the new data
+
+#### For Production Environment (Render):
+1. For most data files, follow the same process as development
+2. For the `sorted_mugshots.csv` file specifically:
+   - Use the wormhole CLI tool to transfer the file directly to the `/data` directory on Render
+   - Example command: `wormhole send /path/to/sorted_mugshots.csv`
+   - Follow the prompts to complete the transfer
+   - The application will automatically detect and use the updated file
 
 ### Deploy on Vercel
 

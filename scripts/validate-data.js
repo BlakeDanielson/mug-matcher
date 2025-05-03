@@ -11,9 +11,15 @@ const path = require('path');
 const DATA_DIR = process.env.NODE_ENV === 'production'
   ? (process.env.RENDER_INTERNAL_RESOURCES_DIR || path.join(__dirname, '..', 'temp_data'))
   : path.join(__dirname, '..', 'data');
+// Note: sorted_mugshots.csv is now transferred manually using the wormhole CLI tool
+// after deployment, not during the build process
+// We still validate its presence, but handle its absence more gracefully
 const REQUIRED_FILES = [
   'sorted_mugshots.csv'
 ];
+
+// Flag to indicate if we're in the build process or runtime
+const isBuildProcess = process.env.NODE_ENV === 'production' && !process.env.RENDER_RUNTIME;
 
 // Validate that required data files exist
 function validateDataFiles() {
@@ -41,50 +47,77 @@ function validateDataFiles() {
   }
   
   // Check required files
-  const missingRequiredFiles = REQUIRED_FILES.filter(file => {
+  let missingRequiredFiles = REQUIRED_FILES.filter(file => {
     const filePath = path.join(DATA_DIR, file);
     return !fs.existsSync(filePath);
   });
   
   if (missingRequiredFiles.length > 0) {
-    console.error(`Error: Missing required data files: ${missingRequiredFiles.join(', ')}`);
+    // Special handling for sorted_mugshots.csv during build process
+    if (isBuildProcess && missingRequiredFiles.includes('sorted_mugshots.csv')) {
+      console.warn(`Note: sorted_mugshots.csv will be transferred manually after deployment using the wormhole CLI tool`);
+      
+      // Remove sorted_mugshots.csv from the list of missing files
+      const otherMissingFiles = missingRequiredFiles.filter(file => file !== 'sorted_mugshots.csv');
+      
+      // If there are no other missing files, we can continue
+      if (otherMissingFiles.length === 0) {
+        console.log('No other required files are missing');
+        return true;
+      }
+      
+      // Update missingRequiredFiles to exclude sorted_mugshots.csv
+      missingRequiredFiles = otherMissingFiles;
+    }
     
-    // Try to create empty placeholder files for missing required files
-    let createdAllPlaceholders = true;
-    
-    missingRequiredFiles.forEach(file => {
-      try {
-        const filePath = path.join(DATA_DIR, file);
-        
-        // For CSV files, create with header row
-        if (file.endsWith('.csv')) {
-          fs.writeFileSync(filePath, 'id,name,booking_date,release_date,charges\n');
-          console.log(`Created empty CSV placeholder: ${filePath}`);
-        } else {
-          fs.writeFileSync(filePath, '');
-          console.log(`Created empty placeholder: ${filePath}`);
+    // Handle any remaining missing files
+    if (missingRequiredFiles.length > 0) {
+      console.error(`Error: Missing required data files: ${missingRequiredFiles.join(', ')}`);
+      
+      // Try to create empty placeholder files for missing required files
+      let createdAllPlaceholders = true;
+      
+      missingRequiredFiles.forEach(file => {
+        try {
+          const filePath = path.join(DATA_DIR, file);
+          
+          // For CSV files, create with header row
+          if (file.endsWith('.csv')) {
+            fs.writeFileSync(filePath, 'id,name,booking_date,release_date,charges\n');
+            console.log(`Created empty CSV placeholder: ${filePath}`);
+          } else {
+            fs.writeFileSync(filePath, '');
+            console.log(`Created empty placeholder: ${filePath}`);
+          }
+        } catch (error) {
+          console.error(`Failed to create placeholder for ${file}: ${error.message}`);
+          createdAllPlaceholders = false;
         }
-      } catch (error) {
-        console.error(`Failed to create placeholder for ${file}: ${error.message}`);
-        createdAllPlaceholders = false;
-      }
-    });
-    
-    if (!createdAllPlaceholders) {
-      if (process.env.NODE_ENV === 'production') {
-        console.warn('Warning: Could not create all required data files in production environment. Some features may not work correctly.');
-        // Don't exit in production, let the app try to run
+      });
+      
+      if (!createdAllPlaceholders) {
+        if (process.env.NODE_ENV === 'production') {
+          console.warn('Warning: Could not create all required data files in production environment. Some features may not work correctly.');
+          // Don't exit in production, let the app try to run
+        } else {
+          console.warn('Warning: Missing required data files. Some features may not work correctly.');
+        }
+        return false;
       } else {
-        console.warn('Warning: Missing required data files. Some features may not work correctly.');
+        console.log('Created placeholder files for all missing required files');
       }
-      return false;
-    } else {
-      console.log('Created placeholder files for all missing required files');
     }
   }
   
   // Check file sizes to ensure they're not empty
-  const emptyFiles = REQUIRED_FILES.filter(file => {
+  let filesToCheck = [...REQUIRED_FILES];
+  
+  // During build process, don't check for sorted_mugshots.csv
+  if (isBuildProcess) {
+    filesToCheck = filesToCheck.filter(file => file !== 'sorted_mugshots.csv');
+  }
+  
+  const emptyFiles = filesToCheck.filter(file => {
     const filePath = path.join(DATA_DIR, file);
     try {
       const stats = fs.statSync(filePath);
@@ -131,7 +164,11 @@ function validateDataFiles() {
     }
   }
   
-  console.log('All required data files are available');
+  if (isBuildProcess) {
+    console.log('All required data files are available (except sorted_mugshots.csv which will be transferred manually after deployment)');
+  } else {
+    console.log('All required data files are available');
+  }
   return true;
 }
 

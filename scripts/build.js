@@ -1,6 +1,8 @@
 /**
  * Wrapper script for building the application
  * This script copies data files before running the Next.js build
+ * Note: sorted_mugshots.csv is now transferred manually using the wormhole CLI tool
+ * after deployment, not during the build process
  */
 
 const { spawn } = require('child_process');
