@@ -1,5 +1,10 @@
 # Project specific
-mug-matcher/
+mug-matcher/*
+!mug-matcher/data/
+!mug-matcher/scripts/
+!mug-matcher/docs/
+!mug-matcher/package.json
+!mug-matcher/README.md
 
 # Environment variables
 .env
