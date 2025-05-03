@@ -14,8 +14,33 @@ export async function getDbConnection() {
     return dbInstance;
   }
 
-  // Get the database path from environment variables or use a default path
-  const dbPath = process.env.MUGSHOTS_DB_PATH || path.join(process.cwd(), '..', 'mugshotscripts', 'mugshots.db');
+  // Get the database path from environment variables
+  const envPath = process.env.MUGSHOTS_DB_PATH;
+  
+  if (!envPath) {
+    throw new Error('MUGSHOTS_DB_PATH environment variable is not set. Please check your .env file.');
+  }
+  
+  let dbPath;
+  
+  // If the path is absolute (like in Render production: /data/mugshots.db), use it directly
+  if (path.isAbsolute(envPath)) {
+    console.log(`Using absolute DB path: ${envPath}`);
+    dbPath = envPath;
+  } else {
+    // In development, resolve relative paths based on the environment
+    const isInMugMatcherDir = process.cwd().endsWith('mug-matcher');
+    
+    // If we're already in the mug-matcher directory, don't add it to the path
+    if (isInMugMatcherDir) {
+      dbPath = path.resolve(process.cwd(), envPath);
+      console.log(`Using relative DB path (from mug-matcher dir): ${dbPath}`);
+    } else {
+      // If we're in the parent directory, add mug-matcher to the path
+      dbPath = path.resolve(process.cwd(), 'mug-matcher', envPath);
+      console.log(`Using relative DB path (from parent dir): ${dbPath}`);
+    }
+  }
 
   try {
     // Open the database connection

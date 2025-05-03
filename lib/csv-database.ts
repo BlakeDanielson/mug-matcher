@@ -25,23 +25,35 @@ let inmateCache: CsvInmate[] | null = null;
 
 /**
  * Get the path to the CSV file
- * Using environment variable or default path
+ * Handles both development and production (Render) environments
  */
 function getCsvFilePath(): string {
   const envPath = process.env.MUGSHOTS_CSV_PATH;
   
-  if (envPath) {
-    // If the path is absolute, use it directly
-    if (path.isAbsolute(envPath)) {
-      return envPath;
-    }
-    
-    // If it's a relative path, resolve it from the current working directory
-    return path.resolve(process.cwd(), envPath);
+  if (!envPath) {
+    throw new Error('MUGSHOTS_CSV_PATH environment variable is not set. Please check your .env file.');
   }
   
-  // Default path if environment variable is not set
-  return path.join(process.cwd(), '..', 'mugshotscripts', 'sorted_mugshots.csv');
+  // If the path is absolute (like in Render production: /data/sorted_mugshots.csv), use it directly
+  if (path.isAbsolute(envPath)) {
+    console.log(`Using absolute CSV path: ${envPath}`);
+    return envPath;
+  }
+  
+  // In development, resolve relative paths based on the environment
+  const isInMugMatcherDir = process.cwd().endsWith('mug-matcher');
+  
+  // If we're already in the mug-matcher directory, don't add it to the path
+  if (isInMugMatcherDir) {
+    const resolvedPath = path.resolve(process.cwd(), envPath);
+    console.log(`Using relative CSV path (from mug-matcher dir): ${resolvedPath}`);
+    return resolvedPath;
+  } else {
+    // If we're in the parent directory, add mug-matcher to the path
+    const resolvedPath = path.resolve(process.cwd(), 'mug-matcher', envPath);
+    console.log(`Using relative CSV path (from parent dir): ${resolvedPath}`);
+    return resolvedPath;
+  }
 }
 
 /**
@@ -56,11 +68,21 @@ async function loadCsvData(): Promise<CsvInmate[]> {
 
   const csvFilePath = getCsvFilePath();
   
+  // === DEBUGGING: Log the path being checked ===
+  console.log(`[DEBUG] Checking for CSV at path: ${csvFilePath}`);
+  // ============================================
+
   try {
     // Check if the file exists
     if (!fs.existsSync(csvFilePath)) {
       console.error(`CSV file not found at path: ${csvFilePath}`);
-      throw new Error(`CSV file not found at path: ${csvFilePath}`);
+      
+      // Provide more helpful error message with potential solutions
+      const errorMessage = process.env.NODE_ENV === 'production'
+        ? `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the mounted /data directory. You may need to run the copy-data script during deployment.`
+        : `CSV file not found at path: ${csvFilePath}. Make sure the file exists in the correct location. You can run 'npm run copy-data' to copy the file to the data directory.`;
+      
+      throw new Error(errorMessage);
     }
 
     // Read the CSV file
@@ -68,7 +90,13 @@ async function loadCsvData(): Promise<CsvInmate[]> {
     
     if (!fileContent || fileContent.trim().length === 0) {
       console.error('CSV file is empty');
-      throw new Error('CSV file is empty');
+      
+      // Provide more helpful error message with potential solutions
+      const errorMessage = process.env.NODE_ENV === 'production'
+        ? 'CSV file is empty. Make sure the file contains valid data. You may need to run the copy-data script during deployment.'
+        : 'CSV file is empty. Make sure the file contains valid data. You can run \'npm run copy-data\' to copy the file to the data directory.';
+      
+      throw new Error(errorMessage);
     }
     
     // Parse the CSV data

@@ -1,0 +1,212 @@
+/* Custom animations and effects for the Mugshot Matching Game */
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.glow-effect {
+  animation: glow 2s infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.card-hover-effect {
+  transition: all 0.3s ease;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.crime-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.crime-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.crime-card:hover::before {
+  opacity: 1;
+}
+
+.submit-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.submit-button:hover::after {
+  left: 100%;
+}
+
+/* Points System Styles */
+
+/* Points Animation */
+@keyframes pointsFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -80%);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -120%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150%);
+  }
+}
+
+.points-animation {
+  position: absolute;
+  z-index: 100;
+  font-size: 1.5rem;
+  font-weight: bold;
+  pointer-events: none;
+  animation: pointsFloat 1.2s ease-out forwards;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.points-animation.bonus {
+  color: #4CAF50;
+}
+
+.points-animation.penalty {
+  color: #F44336;
+}
+
+/* Score Display */
+#current-score, #high-score {
+  transition: all 0.3s ease;
+}
+
+#current-score.highlight {
+  color: #60A5FA;
+  text-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+}
+
+#high-score.highlight {
+  color: #FBBF24;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+/* Error Message */
+.points-error {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(244, 67, 54, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Score Level Badges */
+.score-level {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+.score-level.novice {
+  background-color: #6B7280;
+  color: white;
+}
+
+.score-level.beginner {
+  background-color: #10B981;
+  color: white;
+}
+
+.score-level.intermediate {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.score-level.advanced {
+  background-color: #8B5CF6;
+  color: white;
+}
+
+.score-level.expert {
+  background-color: #F59E0B;
+  color: white;
+}
+
+/* Points Counter Animation */
+@keyframes countUp {
+  from {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-count {
+  animation: countUp 0.5s ease-out;
+}

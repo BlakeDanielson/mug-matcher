@@ -1,12 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle } from "lucide-react"
+import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+// Remove Select imports as it's being replaced
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { DndContext, closestCenter, useDraggable, useDroppable, DragEndEvent } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
+import {
+  PointsManager,
+  ScoreDisplay,
+  createMatchResult,
+  handleMatchComplete,
+  handleGameReset,
+  cleanupPointsSystem,
+  formatPoints
+} from "@/points"
 
 // Define the inmate data type
 interface Inmate {
@@ -19,18 +31,30 @@ interface Inmate {
 export default function MugshotMatchingGame() {
   const { toast } = useToast()
   const [inmates, setInmates] = useState<Inmate[]>([])
-  const [shuffledMugshots, setShuffledMugshots] = useState<Inmate[]>([])
-  const [shuffledCrimes, setShuffledCrimes] = useState<Inmate[]>([])
-  const [matches, setMatches] = useState<Record<number, number | null>>({})
+  const [shuffledMugshotImages, setShuffledMugshotImages] = useState<Inmate[]>([]) // Renamed from shuffledCrimes
+  const [shuffledCrimeDescriptions, setShuffledCrimeDescriptions] = useState<Inmate[]>([]) // Renamed from shuffledMugshots
+  const [matches, setMatches] = useState<Record<string, string | null>>({}) // Maps crimeDescriptionId (string) to mugshotImageId (string)
   const [results, setResults] = useState<{
     score: number
     total: number
     percentage: number
     submitted: boolean
     correctMatches: number[]
+    pointsEarned: number
   } | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeDragId, setActiveDragId] = useState<string | null>(null) // Track the ID of the item being dragged
+
+  // Points system state
+  const [currentPoints, setCurrentPoints] = useState<number>(0)
+  const [highScore, setHighScore] = useState<number>(0)
+  const pointsManagerRef = useRef<PointsManager | null>(null)
+  const scoreDisplayRef = useRef<ScoreDisplay | null>(null)
+  
+  // Game state tracking
+  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({}) // Use string keys
+  const gameStartTimeRef = useRef<number>(Date.now())
 
   // Fetch inmate data from the API
   useEffect(() => {
@@ -69,33 +93,126 @@ export default function MugshotMatchingGame() {
     fetchInmates()
   }, [])
 
+  // Initialize points system
+  useEffect(() => {
+    const initPoints = async () => {
+      try {
+        // Import dynamically to avoid SSR issues
+        const { createPointsManager } = await import('@/points')
+        
+        // Create points manager
+        const manager = await createPointsManager()
+        pointsManagerRef.current = manager
+        
+        // Update state with current points and high score
+        setCurrentPoints(manager.currentPoints)
+        setHighScore(manager.highScore)
+      } catch (error) {
+        console.error('Failed to initialize points system:', error)
+      }
+    }
+    
+    initPoints()
+    
+    // Cleanup on unmount
+    return () => {
+      if (pointsManagerRef.current) {
+        cleanupPointsSystem(pointsManagerRef.current).catch(console.error)
+      }
+    }
+  }, [])
+  
+  // Initialize score display after DOM is ready
+  useEffect(() => {
+    // Wait for DOM elements to be available
+    if (typeof document === 'undefined' || !pointsManagerRef.current) return
+    
+    // Small delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      try {
+        const display = new ScoreDisplay(
+          '#current-score',
+          '#high-score',
+          '.game-container',
+          { animationDuration: 800 }
+        )
+        scoreDisplayRef.current = display
+        
+        // Update display
+        if (pointsManagerRef.current) {
+          display.updateScores(
+            pointsManagerRef.current.currentPoints,
+            pointsManagerRef.current.highScore
+          )
+        }
+      } catch (error) {
+        console.error('Failed to initialize score display:', error)
+      }
+    }, 100)
+    
+    return () => clearTimeout(timer)
+  }, [currentPoints, highScore]) // Re-run when points change
+
   // Shuffle the mugshots and crimes
   const resetGame = (data = inmates) => {
     if (!data.length) return
     
-    const shuffled1 = [...data].sort(() => Math.random() - 0.5)
-    const shuffled2 = [...data].sort(() => Math.random() - 0.5)
+    // Shuffle images and descriptions separately
+    const shuffledImages = [...data].sort(() => Math.random() - 0.5)
+    const shuffledDescriptions = [...data].sort(() => Math.random() - 0.5)
 
-    setShuffledMugshots(shuffled1)
-    setShuffledCrimes(shuffled2)
+    setShuffledCrimeDescriptions(shuffledDescriptions) // Set descriptions
+    setShuffledMugshotImages(shuffledImages) // Set images
     setMatches({})
     setResults(null)
+    setAttemptCounts({})
+    gameStartTimeRef.current = Date.now()
+    
+    // Reset points for current session
+    if (pointsManagerRef.current && scoreDisplayRef.current) {
+      handleGameReset(pointsManagerRef.current, scoreDisplayRef.current)
+    }
   }
 
-  // Handle match selection
-  const handleMatchSelection = (mugshotId: number, selectedCrimeId: number | null) => {
-    setMatches((prev) => ({
-      ...prev,
-      [mugshotId]: selectedCrimeId,
-    }))
+  // Handle drag end event
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null) // Reset active drag ID
+    const { active, over } = event
+
+    // Allow dropping even if IDs match (correct match scenario)
+    if (over) {
+      const descriptionId = over.id.toString()
+      const mugshotId = active.id.toString()
+
+      // Track attempt count for this description
+      setAttemptCounts(prev => ({
+        ...prev,
+        [descriptionId]: (prev[descriptionId] || 0) + 1
+      }))
+
+      setMatches((prev) => {
+        const newMatches = { ...prev }
+        // Remove the mugshot if it was previously assigned to another description
+        Object.keys(newMatches).forEach(key => {
+          if (newMatches[key] === mugshotId) {
+            newMatches[key] = null;
+          }
+        });
+        // Assign the mugshot to the new description
+        newMatches[descriptionId] = mugshotId
+        return newMatches
+      })
+    }
   }
 
   // Submit and evaluate matches
   const handleSubmit = () => {
-    // Check if all mugshots have been matched with a crime
-    const allMugshotsMatched = shuffledMugshots.every((mugshot) => Object.keys(matches).includes(mugshot.id.toString()))
+    // Check if all crime descriptions have been matched with a mugshot image
+    // Ensure all descriptions have a non-null match value
+    const allDescriptionsMatched = shuffledCrimeDescriptions.length === Object.values(matches).filter(v => v !== null).length;
 
-    if (!allMugshotsMatched) {
+
+    if (!allDescriptionsMatched) {
       toast({
         title: "Incomplete Matches",
         description: "Please match all images before submitting.",
@@ -106,41 +223,86 @@ export default function MugshotMatchingGame() {
 
     // Calculate score
     const correctMatches = Object.entries(matches)
-      .filter(([mugshotId, matchedCrimeId]) => Number(matchedCrimeId) === Number(mugshotId))
-      .map(([mugshotId]) => Number(mugshotId))
+      // Filter for entries where the description ID (key) matches the mugshot ID (value)
+      .filter(([descriptionId, matchedMugshotId]) => matchedMugshotId !== null && descriptionId === matchedMugshotId)
+      .map(([descriptionId]) => descriptionId) // Get the IDs of correctly matched descriptions
 
     const score = correctMatches.length
-    const total = inmates.length
-    const percentage = Math.round((score / total) * 100)
+    const total = shuffledCrimeDescriptions.length // Use the count of descriptions as total
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0
+
+    // Calculate points
+    let totalPointsEarned = 0
+    
+    if (pointsManagerRef.current) {
+      // Calculate time elapsed since game start
+      const timeElapsed = Date.now() - gameStartTimeRef.current
+      // Process each correct match for points
+      correctMatches.forEach(descriptionId => {
+        const attemptCount = attemptCounts[descriptionId] || 1
+
+        // Create match result
+        const matchResult = createMatchResult(true, timeElapsed, attemptCount)
+        
+        // Add points
+        const pointsEarned = pointsManagerRef.current!.addPoints(matchResult)
+        totalPointsEarned += pointsEarned
+      })
+      
+      // Update points display
+      if (scoreDisplayRef.current) {
+        scoreDisplayRef.current.updateScores(
+          pointsManagerRef.current.currentPoints,
+          pointsManagerRef.current.highScore
+        )
+        
+        // Animate points if earned
+        if (totalPointsEarned > 0) {
+          scoreDisplayRef.current.animatePoints(totalPointsEarned, true)
+        }
+      }
+      
+      // Save state
+      pointsManagerRef.current.saveState().catch(error => {
+        console.warn('Failed to save points state:', error)
+      })
+      
+      // Update state
+      setCurrentPoints(pointsManagerRef.current.currentPoints)
+      setHighScore(pointsManagerRef.current.highScore)
+    }
 
     setResults({
       score,
       total,
       percentage,
       submitted: true,
-      correctMatches,
+      correctMatches: correctMatches.map(id => Number(id)), // Convert back to numbers if needed elsewhere, though string IDs are fine here
+      pointsEarned: totalPointsEarned
     })
 
     toast({
       title: `Your Score: ${score}/${total}`,
-      description: `You got ${percentage}% correct!`,
-      variant: score === total ? "default" : "destructive",
+      description: `You got ${percentage}% correct! ${totalPointsEarned > 0 ? `+${formatPoints(totalPointsEarned)} points!` : ''}`,
+      variant: score === total && total > 0 ? "default" : "destructive",
     })
   }
 
-  // Find the mugshot crime by ID
-  const getMugshotCrimeById = (id: number) => {
-    return inmates.find((inmate) => inmate.id === id)?.crime || "Unknown crime"
+  // Find the mugshot data (name, image, crime) by ID
+  const getInmateDataById = (id: string | number): Inmate | undefined => {
+    // Ensure comparison is done with string IDs if necessary, or convert id to number
+    const numericId = Number(id);
+    return inmates.find((inmate) => inmate.id === numericId);
   }
 
   // If loading, show a loading state
   if (loading) {
     return (
       <div className="w-full max-w-4xl">
-        <Card className="p-6 shadow-lg flex items-center justify-center">
+        <Card className="p-6 shadow-lg bg-gray-800 border-gray-700 flex items-center justify-center">
           <div className="text-center py-12">
-            <div className="animate-spin h-8 w-8 border-4 border-slate-300 border-t-slate-600 rounded-full mx-auto mb-4"></div>
-            <p className="text-lg text-slate-700">Loading mugshot data...</p>
+            <div className="animate-spin h-8 w-8 border-4 border-gray-600 border-t-blue-400 rounded-full mx-auto mb-4"></div>
+            <p className="text-lg text-gray-300">Loading mugshot data...</p>
           </div>
         </Card>
       </div>
@@ -151,12 +313,12 @@ export default function MugshotMatchingGame() {
   if (error) {
     return (
       <div className="w-full max-w-4xl">
-        <Card className="p-6 shadow-lg">
+        <Card className="p-6 shadow-lg bg-gray-800 border-gray-700">
           <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Data</h2>
-            <p className="text-slate-700 mb-6">{error}</p>
-            <Button onClick={() => window.location.reload()} variant="outline">
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-red-400 mb-2">Error Loading Data</h2>
+            <p className="text-gray-300 mb-6">{error}</p>
+            <Button onClick={() => window.location.reload()} variant="outline" className="border-gray-600 text-gray-200 hover:bg-gray-700">
               Try Again
               <RefreshCw className="ml-2 h-5 w-5" />
             </Button>
@@ -166,153 +328,246 @@ export default function MugshotMatchingGame() {
     )
   }
 
+  // Draggable Mugshot Component
+  function DraggableMugshot({ mugshot, index }: { mugshot: Inmate; index: number }) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+      id: mugshot.id.toString(), // Use string ID for dnd-kit
+    });
+    const style = transform ? {
+      transform: CSS.Translate.toString(transform),
+      zIndex: 100, // Ensure dragged item is on top
+      opacity: isDragging ? 0.7 : 1,
+      cursor: isDragging ? 'grabbing' : 'grab',
+    } : {
+      cursor: 'grab',
+    };
+
+    // Check if this mugshot is already matched to a description
+    const isMatched = Object.values(matches).includes(mugshot.id.toString());
+
+    return (
+      <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="space-y-2">
+        {/* Inmate image */}
+        <div
+          className={cn(
+            "relative rounded-lg overflow-hidden border-2 aspect-square transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] transform card-hover-effect",
+            // Highlight if this image ID is used in any match OR if it's being dragged
+            (isMatched || isDragging) && !results?.submitted
+              ? "border-blue-500 ring-2 ring-blue-500/50" // Highlight if matched or dragging
+              : "border-gray-700 hover:border-gray-600",
+            isDragging ? "scale-105 shadow-2xl" : "", // Style when dragging
+            results?.submitted && !isMatched ? "opacity-50" : "" // Dim if submitted and not matched correctly
+          )}
+        >
+          <img
+            src={mugshot.image || "/placeholder.svg"}
+            alt={`Mugshot ${index + 1}`}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded-md text-sm backdrop-blur-sm shadow-sm">
+            {mugshot.name}
+          </div>
+
+          {results?.submitted && (
+            <div
+              className={cn(
+                "absolute bottom-0 inset-x-0 p-2 text-white text-center",
+                // Check if this image (mugshot.id) is correctly matched to its corresponding description
+                Object.entries(matches).some(
+                  ([descriptionId, matchedImageId]) =>
+                    matchedImageId === mugshot.id.toString() && descriptionId === mugshot.id.toString(),
+                )
+                  ? "bg-green-500/90 backdrop-blur-sm" // Correct match for this image
+                  : "bg-red-500/90 backdrop-blur-sm", // Incorrect or not matched to the right description
+              )}
+            >
+              {/* Check if this image is correctly matched */}
+              {Object.entries(matches).some(
+                ([descriptionId, matchedImageId]) =>
+                  matchedImageId === mugshot.id.toString() && descriptionId === mugshot.id.toString(),
+              ) ? (
+                <div className="flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Correct!
+                </div>
+              ) : (
+                <div className="flex items-center justify-center text-xs">
+                  <XCircle className="h-4 w-4 mr-1" />
+                  {/* Show the correct crime for this mugshot */}
+                  {getInmateDataById(mugshot.id)?.crime || "Unknown"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Droppable Crime Description Component
+  function DroppableCrimeDescription({ description }: { description: Inmate }) {
+    const { isOver, setNodeRef } = useDroppable({
+      id: description.id.toString(), // Use string ID
+    });
+
+    const matchedMugshotId = matches[description.id.toString()];
+    const matchedMugshotData = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
+
+    return (
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "p-5 rounded-lg border transition-all shadow-md crime-card min-h-[150px] flex flex-col justify-between", // Ensure minimum height
+          // Highlight based on whether the match for this description ID is correct
+          results?.submitted && results.correctMatches.includes(description.id)
+            ? "border-green-500 bg-green-900/20" // Correctly matched description
+            : results?.submitted
+              ? "border-red-500 bg-red-900/20" // Incorrectly matched description
+              : "border-gray-700 hover:border-gray-600 bg-gradient-to-b from-gray-900/80 to-gray-800/50 hover:shadow-lg",
+          isOver ? "ring-2 ring-blue-500 border-blue-500 bg-gray-700/50" : "", // Highlight when dragging over
+          activeDragId && !isOver ? "opacity-70" : "" // Slightly dim other drop zones when dragging
+        )}
+      >
+        <div className="flex-grow">
+          {/* Display the crime description text */}
+          <div className="text-lg font-medium text-gray-200 break-words whitespace-normal leading-relaxed mb-4">
+            {description.crime || "Unknown crime"}
+          </div>
+        </div>
+
+        {/* Area to show the matched mugshot or placeholder */}
+        <div className="mt-auto pt-2 border-t border-gray-700/50 flex items-center justify-between min-h-[40px]">
+          {matchedMugshotData ? (
+            <div className="flex items-center gap-2 text-sm text-gray-300">
+              <img src={matchedMugshotData.image} alt={matchedMugshotData.name} className="h-8 w-8 rounded-full object-cover border border-gray-600"/>
+              <span>{matchedMugshotData.name}</span>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 italic">
+              {isOver ? "Drop here" : "Drag a mugshot here"}
+            </div>
+          )}
+
+          {/* Show check/cross based on the match for this description */}
+          {results?.submitted && (
+            matches[description.id.toString()] === description.id.toString() ? (
+              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+            ) : (
+              <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
+
+
   return (
-    <div className="w-full max-w-4xl">
-      <Card className="p-6 shadow-lg">
+    <DndContext collisionDetection={closestCenter} onDragStart={(e) => setActiveDragId(e.active.id.toString())} onDragEnd={handleDragEnd}>
+      <div className="w-full max-w-4xl fade-in game-container">
+        <Card className="p-6 shadow-xl bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700">
+          {/* Points display */}
+          <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="bg-blue-900/50 px-3 py-1 rounded-md border border-blue-700/50">
+              <span className="text-sm text-gray-400">Points:</span>{" "}
+              <span id="current-score" className="font-bold text-blue-400">{formatPoints(currentPoints)}</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="bg-amber-900/50 px-3 py-1 rounded-md border border-amber-700/50 flex items-center">
+              <Trophy className="h-4 w-4 text-amber-500 mr-1" />
+              <span className="text-sm text-gray-400">High Score:</span>{" "}
+              <span id="high-score" className="font-bold text-amber-400 ml-1">{formatPoints(highScore)}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-6 text-center">
-          <p className="text-lg text-slate-700">Match each criminal with their crime</p>
+          <p className="text-lg text-gray-300">Match each criminal with their crime</p>
         </div>
 
         {/* Game board */}
         <div className="space-y-8">
           {/* Inmate images section at the top */}
+          {/* Mugshots Section (Draggable Items) */}
           <div>
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Mugshots</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4">
-              {shuffledCrimes.map((mugshot, index) => (
-                <div key={mugshot.id} className="space-y-2">
-                  {/* Inmate image */}
-                  <div
-                    className={cn(
-                      "relative rounded-lg overflow-hidden border-2 aspect-square",
-                      Object.values(matches).includes(mugshot.id) && !results?.submitted
-                        ? "border-slate-400"
-                        : "border-transparent",
-                    )}
-                  >
-                    <img
-                      src={mugshot.image || "/placeholder.svg"}
-                      alt={`Mugshot ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 left-2 bg-slate-800 text-white px-2 py-1 rounded-md text-sm">
-                      Mugshot {index + 1}
-                    </div>
-
-                    {results?.submitted && (
-                      <div
-                        className={cn(
-                          "absolute bottom-0 inset-x-0 p-2 text-white text-center",
-                          Object.entries(matches).some(
-                            ([mugshotId, matchedCrimeId]) =>
-                              Number(matchedCrimeId) === mugshot.id && Number(mugshotId) === mugshot.id,
-                          )
-                            ? "bg-green-500/80"
-                            : "bg-red-500/80",
-                        )}
-                      >
-                        {Object.entries(matches).some(
-                          ([mugshotId, matchedCrimeId]) =>
-                            Number(matchedCrimeId) === mugshot.id && Number(mugshotId) === mugshot.id,
-                        ) ? (
-                          <div className="flex items-center justify-center">
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                            Correct!
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center">
-                            <XCircle className="h-4 w-4 mr-1" />
-                            {getMugshotCrimeById(mugshot.id)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">Mugshots (Drag these)</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
+              {shuffledMugshotImages.map((mugshot, index) => (
+                <DraggableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
               ))}
+              {/* Remove extra closing braces */}
             </div>
           </div>
 
-          {/* Inmate crimes section below */}
+          {/* Crime Descriptions Section (Droppable Areas) */}
           <div>
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Crime Descriptions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {shuffledMugshots.map((mugshot) => (
-                <div
-                  key={mugshot.id}
-                  className={cn(
-                    "p-4 rounded-lg border transition-all",
-                    results?.submitted && results.correctMatches.includes(mugshot.id)
-                      ? "border-green-500 bg-green-50"
-                      : results?.submitted
-                        ? "border-red-500 bg-red-50"
-                        : "border-slate-200 hover:border-slate-300",
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-medium">{mugshot.crime || "Unknown crime"}</span>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={matches[mugshot.id]?.toString() || ""}
-                        onValueChange={(value) =>
-                          handleMatchSelection(mugshot.id, value ? Number.parseInt(value) : null)
-                        }
-                        disabled={results?.submitted}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Select a mugshot" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {shuffledCrimes.map((crime, index) => (
-                            <SelectItem key={crime.id} value={crime.id.toString()}>
-                              Mugshot {index + 1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      {results?.submitted &&
-                        (matches[mugshot.id] === mugshot.id ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-500" />
-                        ))}
-                    </div>
-                  </div>
-                </div>
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">Crime Descriptions (Drop mugshots here)</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              {shuffledCrimeDescriptions.map((description) => (
+                <DroppableCrimeDescription key={description.id} description={description} />
               ))}
+              {/* Remove extra closing braces */}
             </div>
           </div>
         </div>
 
         {/* Results section */}
         {results?.submitted && (
-          <div className="mt-8 p-4 bg-slate-100 rounded-lg">
-            <h2 className="text-xl font-semibold text-center mb-2">Results</h2>
-            <div className="flex justify-center items-center gap-4">
+          <div className="mt-8 p-6 bg-gradient-to-b from-gray-900/70 to-gray-800/50 rounded-lg border border-gray-700 shadow-lg">
+            <h2 className="text-xl font-semibold text-center mb-2 text-gray-200">Results</h2>
+            <div className="flex justify-center items-center gap-4 flex-wrap">
               <div className="text-center">
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-gray-100">
                   {results.score}/{results.total}
                 </p>
-                <p className="text-sm text-slate-600">Correct Matches</p>
+                <p className="text-sm text-gray-400">Correct Matches</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold">{results.percentage}%</p>
-                <p className="text-sm text-slate-600">Accuracy</p>
+                <p className="text-3xl font-bold text-gray-100">{results.percentage}%</p>
+                <p className="text-sm text-gray-400">Accuracy</p>
               </div>
+              {results.pointsEarned > 0 && (
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-blue-400">+{results.pointsEarned}</p>
+                  <p className="text-sm text-gray-400">Points Earned</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-4 text-center">
+              <p className="text-gray-300">
+                Total Score: <span className="font-bold text-blue-400">{formatPoints(currentPoints)}</span>
+              </p>
+              {currentPoints >= highScore && currentPoints > 0 && (
+                <p className="text-amber-400 mt-1 flex items-center justify-center">
+                  <Trophy className="h-4 w-4 mr-1" />
+                  New High Score!
+                </p>
+              )}
             </div>
           </div>
         )}
 
         {/* Action buttons */}
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-10 flex justify-center gap-4">
           {!results?.submitted ? (
-            <Button onClick={handleSubmit} className="px-8" size="lg">
+            <Button
+              onClick={handleSubmit}
+              className="px-10 py-6 bg-blue-600 hover:bg-blue-700 text-white border-none shadow-lg hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] transform submit-button glow-effect"
+              size="lg"
+            >
               Submit Answers
               <ArrowRightLeft className="ml-2 h-5 w-5" />
             </Button>
           ) : (
-            <Button onClick={() => resetGame()} className="px-8" size="lg" variant="outline">
+            <Button
+              onClick={() => resetGame()}
+              className="px-10 py-6 border-gray-600 text-gray-200 hover:bg-gray-700 shadow-lg hover:shadow-gray-500/10 transition-all duration-300 hover:scale-[1.02] transform submit-button"
+              size="lg"
+              variant="outline"
+            >
               Play Again
               <RefreshCw className="ml-2 h-5 w-5" />
             </Button>
@@ -320,5 +575,6 @@ export default function MugshotMatchingGame() {
         </div>
       </Card>
     </div>
+  </DndContext>
   )
 }
