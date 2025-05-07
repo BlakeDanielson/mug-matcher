@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* body {
+  font-family: Arial, Helvetica, sans-serif; // Removed, Tailwind will handle this
+} */
 
 @layer utilities {
   .text-balance {
@@ -30,6 +32,12 @@ body {
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+    --success: 145 63% 40%;
+    --success-foreground: 145 100% 98%;
+    --warning: 45 100% 50%;
+    --warning-foreground: 45 100% 5%;
+    --info: 210 100% 50%;
+    --info-foreground: 210 100% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
@@ -65,6 +73,12 @@ body {
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+    --success: 145 63% 30%;
+    --success-foreground: 145 100% 90%;
+    --warning: 45 100% 40%;
+    --warning-foreground: 45 100% 95%;
+    --info: 210 100% 40%;
+    --info-foreground: 210 100% 90%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
