@@ -243,11 +243,12 @@ async function loadCsvData(): Promise<CsvInmate[]> {
     const hasRequiredFields = firstRecord &&
                              'InmateID' in firstRecord &&
                              'Name' in firstRecord &&
-                             'MugshotURL' in firstRecord;
+                             'MugshotURL' in firstRecord &&
+                             'Description' in firstRecord; // Added Description check
     
     if (!hasRequiredFields) {
-      console.error(`[CSV-DB] CSV data is missing required fields. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
-      throw new Error(`CSV data is missing required fields. The file format may be incorrect.`);
+      console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, Description. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
+      throw new Error(`CSV data is missing required fields (expected InmateID, Name, MugshotURL, Description). The file format may be incorrect.`);
     }
     
     // Cache the data

@@ -1,8 +1,8 @@
 /**
  * Wrapper script for starting the application
  * This script validates data files before starting the Next.js server
- * Note: sorted_mugshots.csv is now transferred manually using the wormhole CLI tool
- * after deployment, not during the build process
+ * Note: sorted_mugshots.csv is now included in the repository
+ * and does not need to be downloaded or transferred separately
  */
 
 const { spawn } = require('child_process');

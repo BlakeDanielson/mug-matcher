@@ -1,7 +1,7 @@
 /**
  * Script to copy CSV files to the mounted /data directory during development
- * Note: For Render deployment, sorted_mugshots.csv is now transferred manually
- * using the wormhole CLI tool after deployment, not during the build process
+ * Note: sorted_mugshots.csv is now included in the repository
+ * and does not need to be downloaded or transferred separately
  */
 
 const fs = require('fs');
@@ -91,10 +91,10 @@ function copyFileIfExists(sourcePath, destPath) {
 
 // Copy CSV files to the data directory
 function copyDataFiles() {
-  // Note: sorted_mugshots.csv is now transferred using wormhole library
-  // and no longer needs to be copied by this script
+  // Note: sorted_mugshots.csv is now included in the repository
+  // and does not need to be copied by this script
   const filesToCopy = [
-    // 'sorted_mugshots.csv' has been removed as it's now handled by wormhole
+    // 'sorted_mugshots.csv' has been removed as it's now included in the repository
   ];
   
   ensureDataDirExists();

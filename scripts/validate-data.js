@@ -11,9 +11,9 @@ const path = require('path');
 const DATA_DIR = process.env.NODE_ENV === 'production'
   ? (process.env.RENDER_INTERNAL_RESOURCES_DIR || path.join(__dirname, '..', 'temp_data'))
   : path.join(__dirname, '..', 'data');
-// Note: sorted_mugshots.csv is now transferred manually using the wormhole CLI tool
-// after deployment, not during the build process
-// We still validate its presence, but handle its absence more gracefully
+// Note: sorted_mugshots.csv is now included in the repository
+// and does not need to be downloaded or transferred separately
+// We still validate its presence to ensure it's available
 const REQUIRED_FILES = [
   'sorted_mugshots.csv'
 ];
@@ -55,19 +55,9 @@ function validateDataFiles() {
   if (missingRequiredFiles.length > 0) {
     // Special handling for sorted_mugshots.csv during build process
     if (isBuildProcess && missingRequiredFiles.includes('sorted_mugshots.csv')) {
-      console.warn(`Note: sorted_mugshots.csv will be transferred manually after deployment using the wormhole CLI tool`);
+      console.warn(`Error: sorted_mugshots.csv is missing. This file should be included in the repository.`);
       
-      // Remove sorted_mugshots.csv from the list of missing files
-      const otherMissingFiles = missingRequiredFiles.filter(file => file !== 'sorted_mugshots.csv');
-      
-      // If there are no other missing files, we can continue
-      if (otherMissingFiles.length === 0) {
-        console.log('No other required files are missing');
-        return true;
-      }
-      
-      // Update missingRequiredFiles to exclude sorted_mugshots.csv
-      missingRequiredFiles = otherMissingFiles;
+      // We don't remove it from the list of missing files since it should be in the repository
     }
     
     // Handle any remaining missing files
@@ -112,10 +102,7 @@ function validateDataFiles() {
   // Check file sizes to ensure they're not empty
   let filesToCheck = [...REQUIRED_FILES];
   
-  // During build process, don't check for sorted_mugshots.csv
-  if (isBuildProcess) {
-    filesToCheck = filesToCheck.filter(file => file !== 'sorted_mugshots.csv');
-  }
+  // Always check all required files, including sorted_mugshots.csv
   
   const emptyFiles = filesToCheck.filter(file => {
     const filePath = path.join(DATA_DIR, file);
@@ -164,11 +151,7 @@ function validateDataFiles() {
     }
   }
   
-  if (isBuildProcess) {
-    console.log('All required data files are available (except sorted_mugshots.csv which will be transferred manually after deployment)');
-  } else {
-    console.log('All required data files are available');
-  }
+  console.log('All required data files are available');
   return true;
 }
 

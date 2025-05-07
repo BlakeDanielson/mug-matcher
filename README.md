@@ -51,14 +51,15 @@ cp .env.example .env.local
 
 ### Deploy on Render
 
-This application is configured for deployment on [Render](https://render.com) using the `render.yaml` configuration file. The application now automatically downloads the CSV file during the build process instead of requiring manual transfer after deployment.
+This application is configured for deployment on [Render](https://render.com) using the `render.yaml` configuration file. The application now includes the CSV file directly in the repository, eliminating the need for manual transfer or download after deployment.
 
 Key configuration for Render deployment:
 - The application uses environment variables to locate data files
-- CSV files are stored in the project directory at `/opt/render/project/src/data`
-- The application automatically downloads the CSV file from a secure URL during the build process
+- CSV files are stored in the `data` directory in the repository
 - The application automatically detects whether it's running in development or production mode
 - Custom build and start scripts handle data file management
+
+For detailed deployment instructions, see the [Render Deployment Guide](./docs/deployment/render-deployment.md).
 
 ## Data Management
 
@@ -66,35 +67,36 @@ This application uses CSV files to store mugshot data. The data management proce
 
 ### Data Directory Structure
 
-- In development: Data files are stored in the `data` directory in the project root
-- In production (Render): Data files are stored in the project directory at `/opt/render/project/src/data`
+- In development and production: Data files are stored in the `data` directory in the project root
+- The CSV file is included directly in the repository, eliminating the need for manual transfer or download
 
 ### Data Management Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run download-data` | Downloads the CSV file from a secure URL |
-| `npm run copy-data` | Copies CSV files from source directories to the data directory |
+| `npm run copy-data` | Copies CSV files from source directories to the data directory (for development) |
 | `npm run validate-data` | Validates that required data files exist and are not empty |
+| `npm run update-render-config` | Updates the Render deployment configuration to include data files in the repository |
+| `npm run setup-data-file` | Interactive script to help set up the sorted_mugshots.csv file in the data directory |
+| `npm run test-data-access` | Tests whether the application can access the data files in both development and production environments |
 
 ### Deployment Process
 
 During deployment to Render, the following steps are performed:
 
-1. The build script (`npm run build`) runs the download-data script to download the CSV file from a secure URL
-2. The build script then runs the copy-data script to ensure other data files are available
-3. After the build, the data files are validated to ensure they exist and are not empty
-4. The start script (`npm run start`) validates the data files again before starting the Next.js server
-5. If any required data files are missing or empty, the application will fail to start with a helpful error message
+1. The build script (`npm run build`) validates that the CSV file exists in the repository
+2. The build script then runs the Next.js build process
+3. The start script (`npm run start`) validates the data files again before starting the Next.js server
+4. If any required data files are missing or empty, the application will fail to start with a helpful error message
 
-### Automatic CSV Download
+### CSV File in Repository
 
-The `sorted_mugshots.csv` file is now downloaded automatically during the build process:
+The `sorted_mugshots.csv` file is now included directly in the repository:
 
-1. The application uses the `MUGSHOTS_CSV_URL` environment variable to download the file from a secure URL
-2. The file is downloaded to the project directory at `/opt/render/project/src/data/sorted_mugshots.csv`
+1. The file is stored in the `data` directory in the repository
+2. This approach eliminates the need for manual transfer or download after deployment
 3. The application will automatically detect the file and use it
-4. This approach is more secure and reliable than manual transfer, as it ensures the file is always available after deployment
+4. This approach is more reliable as it ensures the file is always available after deployment
 
 ### Error Handling
 
@@ -109,17 +111,14 @@ The application includes robust error handling for missing or empty data files:
 To add or update data files:
 
 #### For Development Environment:
-1. Place the new or updated CSV files in the source directory (e.g., `../mugshotscripts/`)
-2. Run `npm run copy-data` to copy the files to the data directory
-3. Restart the application to use the new data
+1. Place the new or updated CSV files directly in the `data` directory in the project root
+2. Restart the application to use the new data
 
 #### For Production Environment (Render):
-1. For most data files, follow the same process as development
-2. For the `sorted_mugshots.csv` file specifically:
-   - Update the secure URL where the file is hosted
-   - Set the `MUGSHOTS_CSV_URL` environment variable in the Render dashboard
-   - Redeploy the application to download the updated file
-   - The application will automatically download and use the updated file during the build process
+1. Update the CSV file in the `data` directory in the repository
+2. Commit and push the changes to the repository
+3. Redeploy the application on Render
+4. The application will automatically use the updated file
 
 ### Deploy on Vercel
 

@@ -11,7 +11,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "copy-data": "node scripts/copy-data.js",
-    "validate-data": "node scripts/validate-data.js"
+    "validate-data": "node scripts/validate-data.js",
+    "update-render-config": "node scripts/update-render-config.js",
+    "setup-data-file": "node scripts/setup-data-file.js",
+    "test-data-access": "node scripts/test-data-access.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
