@@ -8,8 +8,7 @@ import { cn } from "@/lib/utils"
 // Remove Select imports as it's being replaced
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { DndContext, closestCenter, useDraggable, useDroppable, DragEndEvent } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
+// Removed DndContext and related imports
 import {
   PointsManager,
   ScoreDisplay,
@@ -44,7 +43,9 @@ export default function MugshotMatchingGame() {
   } | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeDragId, setActiveDragId] = useState<string | null>(null) // Track the ID of the item being dragged
+  // Removed activeDragId state
+  const [selectedMugshotId, setSelectedMugshotId] = useState<string | null>(null) // State for selected mugshot
+  const [selectedDescriptionId, setSelectedDescriptionId] = useState<string | null>(null) // State for selected description
 
   // Points system state
   const [currentPoints, setCurrentPoints] = useState<number>(0)
@@ -121,7 +122,36 @@ export default function MugshotMatchingGame() {
       }
     }
   }, [])
-  
+
+  // Effect to handle matching when both a mugshot and description are selected
+  useEffect(() => {
+    if (selectedMugshotId && selectedDescriptionId) {
+      // Track attempt count for this description
+      setAttemptCounts(prev => ({
+        ...prev,
+        [selectedDescriptionId]: (prev[selectedDescriptionId] || 0) + 1
+      }))
+
+      // Update the matches state
+      setMatches((prev) => {
+        const newMatches = { ...prev }
+        // Remove the mugshot if it was previously assigned to another description
+        Object.keys(newMatches).forEach(key => {
+          if (newMatches[key] === selectedMugshotId) {
+            newMatches[key] = null;
+          }
+        });
+        // Assign the selected mugshot to the selected description
+        newMatches[selectedDescriptionId] = selectedMugshotId
+        return newMatches
+      })
+
+      // Reset selections
+      setSelectedMugshotId(null)
+      setSelectedDescriptionId(null)
+    }
+  }, [selectedMugshotId, selectedDescriptionId]) // Dependency array
+
   // Initialize score display after DOM is ready
   useEffect(() => {
     // Wait for DOM elements to be available
@@ -174,36 +204,7 @@ export default function MugshotMatchingGame() {
     }
   }
 
-  // Handle drag end event
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveDragId(null) // Reset active drag ID
-    const { active, over } = event
-
-    // Allow dropping even if IDs match (correct match scenario)
-    if (over) {
-      const descriptionId = over.id.toString()
-      const mugshotId = active.id.toString()
-
-      // Track attempt count for this description
-      setAttemptCounts(prev => ({
-        ...prev,
-        [descriptionId]: (prev[descriptionId] || 0) + 1
-      }))
-
-      setMatches((prev) => {
-        const newMatches = { ...prev }
-        // Remove the mugshot if it was previously assigned to another description
-        Object.keys(newMatches).forEach(key => {
-          if (newMatches[key] === mugshotId) {
-            newMatches[key] = null;
-          }
-        });
-        // Assign the mugshot to the new description
-        newMatches[descriptionId] = mugshotId
-        return newMatches
-      })
-    }
-  }
+  // Removed handleDragEnd function
 
   // Submit and evaluate matches
   const handleSubmit = () => {
@@ -328,34 +329,28 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  // Draggable Mugshot Component
-  function DraggableMugshot({ mugshot, index }: { mugshot: Inmate; index: number }) {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-      id: mugshot.id.toString(), // Use string ID for dnd-kit
-    });
-    const style = transform ? {
-      transform: CSS.Translate.toString(transform),
-      zIndex: 100, // Ensure dragged item is on top
-      opacity: isDragging ? 0.7 : 1,
-      cursor: isDragging ? 'grabbing' : 'grab',
-    } : {
-      cursor: 'grab',
-    };
+  // Selectable Mugshot Component (Renamed from DraggableMugshot)
+  function SelectableMugshot({ mugshot, index }: { mugshot: Inmate; index: number }) {
+    // Removed useDraggable hook and related variables/styles
 
     // Check if this mugshot is already matched to a description
     const isMatched = Object.values(matches).includes(mugshot.id.toString());
+    const isSelected = selectedMugshotId === mugshot.id.toString(); // Check if this mugshot is selected
 
     return (
-      <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="space-y-2">
+      <div
+        className="space-y-2 cursor-pointer" // Added cursor-pointer
+        onClick={() => setSelectedMugshotId(mugshot.id.toString())} // Added onClick handler
+      >
         {/* Inmate image */}
         <div
           className={cn(
             "relative rounded-lg overflow-hidden border-2 aspect-square transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] transform card-hover-effect",
-            // Highlight if this image ID is used in any match OR if it's being dragged
-            (isMatched || isDragging) && !results?.submitted
-              ? "border-blue-500 ring-2 ring-blue-500/50" // Highlight if matched or dragging
+            // Highlight if selected or matched
+            (isSelected || (isMatched && !results?.submitted))
+              ? "border-blue-500 ring-2 ring-blue-500/50"
               : "border-gray-700 hover:border-gray-600",
-            isDragging ? "scale-105 shadow-2xl" : "", // Style when dragging
+            // Removed isDragging style
             results?.submitted && !isMatched ? "opacity-50" : "" // Dim if submitted and not matched correctly
           )}
         >
@@ -404,29 +399,30 @@ export default function MugshotMatchingGame() {
     );
   }
 
-  // Droppable Crime Description Component
-  function DroppableCrimeDescription({ description }: { description: Inmate }) {
-    const { isOver, setNodeRef } = useDroppable({
-      id: description.id.toString(), // Use string ID
-    });
+  // Selectable Crime Description Component (Renamed from DroppableCrimeDescription)
+  function SelectableDescription({ description }: { description: Inmate }) {
+    // Removed useDroppable hook and isOver variable
 
     const matchedMugshotId = matches[description.id.toString()];
     const matchedMugshotData = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
+    const isSelected = selectedDescriptionId === description.id.toString(); // Check if this description is selected
 
     return (
       <div
-        ref={setNodeRef}
+        // Removed setNodeRef
         className={cn(
-          "p-5 rounded-lg border transition-all shadow-md crime-card min-h-[150px] flex flex-col justify-between", // Ensure minimum height
-          // Highlight based on whether the match for this description ID is correct
-          results?.submitted && results.correctMatches.includes(description.id)
-            ? "border-green-500 bg-green-900/20" // Correctly matched description
-            : results?.submitted
-              ? "border-red-500 bg-red-900/20" // Incorrectly matched description
-              : "border-gray-700 hover:border-gray-600 bg-gradient-to-b from-gray-900/80 to-gray-800/50 hover:shadow-lg",
-          isOver ? "ring-2 ring-blue-500 border-blue-500 bg-gray-700/50" : "", // Highlight when dragging over
-          activeDragId && !isOver ? "opacity-70" : "" // Slightly dim other drop zones when dragging
+          "p-5 rounded-lg border transition-all shadow-md crime-card min-h-[150px] flex flex-col justify-between cursor-pointer", // Added cursor-pointer
+          // Highlight based on selection or match result
+          isSelected
+            ? "border-blue-500 ring-2 ring-blue-500/50" // Highlight if selected
+            : results?.submitted && results.correctMatches.includes(description.id)
+              ? "border-green-500 bg-green-900/20" // Correctly matched description
+              : results?.submitted
+                ? "border-red-500 bg-red-900/20" // Incorrectly matched description
+                : "border-gray-700 hover:border-gray-600 bg-gradient-to-b from-gray-900/80 to-gray-800/50 hover:shadow-lg",
+          // Removed isOver and activeDragId styles
         )}
+        onClick={() => setSelectedDescriptionId(description.id.toString())} // Added onClick handler
       >
         <div className="flex-grow">
           {/* Display the crime description text */}
@@ -444,7 +440,8 @@ export default function MugshotMatchingGame() {
             </div>
           ) : (
             <div className="text-sm text-gray-500 italic">
-              {isOver ? "Drop here" : "Drag a mugshot here"}
+              {/* Updated placeholder text */}
+              {isSelected ? "Selected" : matchedMugshotData ? "" : "Click to select"}
             </div>
           )}
 
@@ -463,10 +460,10 @@ export default function MugshotMatchingGame() {
 
 
   return (
-    <DndContext collisionDetection={closestCenter} onDragStart={(e) => setActiveDragId(e.active.id.toString())} onDragEnd={handleDragEnd}>
-      <div className="w-full max-w-4xl fade-in game-container">
-        <Card className="p-6 shadow-xl bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700">
-          {/* Points display */}
+    // Removed DndContext wrapper
+    <div className="w-full max-w-4xl fade-in game-container">
+      <Card className="p-6 shadow-xl bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700">
+        {/* Points display */}
           <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
             <div className="bg-blue-900/50 px-3 py-1 rounded-md border border-blue-700/50">
@@ -490,25 +487,25 @@ export default function MugshotMatchingGame() {
         {/* Game board */}
         <div className="space-y-8">
           {/* Inmate images section at the top */}
-          {/* Mugshots Section (Draggable Items) */}
+          {/* Mugshots Section (Selectable Items) */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-200 mb-4">Mugshots (Drag these)</h2>
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">Mugshots (Click one)</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
               {shuffledMugshotImages.map((mugshot, index) => (
-                <DraggableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
+                <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
               ))}
-              {/* Remove extra closing braces */}
+              {/* Removed extra closing braces */}
             </div>
           </div>
 
-          {/* Crime Descriptions Section (Droppable Areas) */}
+          {/* Crime Descriptions Section (Selectable Areas) */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-200 mb-4">Crime Descriptions (Drop mugshots here)</h2>
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">Crime Descriptions (Click one)</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
               {shuffledCrimeDescriptions.map((description) => (
-                <DroppableCrimeDescription key={description.id} description={description} />
+                <SelectableDescription key={description.id} description={description} />
               ))}
-              {/* Remove extra closing braces */}
+              {/* Removed extra closing braces */}
             </div>
           </div>
         </div>
@@ -575,6 +572,6 @@ export default function MugshotMatchingGame() {
         </div>
       </Card>
     </div>
-  </DndContext>
+    // Removed closing DndContext tag
   )
 }
