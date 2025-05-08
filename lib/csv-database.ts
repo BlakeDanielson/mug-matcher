@@ -7,8 +7,7 @@ interface CsvInmate {
   InmateID: string;
   Name: string;
   MugshotURL: string;
-  Description: string;
-  // The Description field may contain pipe-delimited values
+  AI_Description_Explanation: string; // Changed from Description
   // Other fields are available but not needed for our implementation
 }
 
@@ -242,15 +241,15 @@ async function loadCsvData(): Promise<CsvInmate[]> {
     const firstRecord = parseResult.data[0];
     const hasRequiredFields = firstRecord &&
                              'InmateID' in firstRecord &&
-                             'Name' in firstRecord &&
-                             'MugshotURL' in firstRecord &&
-                             'Description' in firstRecord; // Added Description check
+                              'Name' in firstRecord &&
+                              'MugshotURL' in firstRecord &&
+                              'AI_Description_Explanation' in firstRecord; // Changed from Description
     
     if (!hasRequiredFields) {
-      console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, Description. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
-      throw new Error(`CSV data is missing required fields (expected InmateID, Name, MugshotURL, Description). The file format may be incorrect.`);
+      console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, AI_Description_Explanation. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
+      throw new Error(`CSV data is missing required fields (expected InmateID, Name, MugshotURL, AI_Description_Explanation). The file format may be incorrect.`);
     }
-    
+
     // Cache the data
     inmateCache = parseResult.data;
     console.log(`[CSV-DB] Successfully loaded ${inmateCache.length} inmates from CSV at ${csvFilePath}`);
@@ -262,7 +261,7 @@ async function loadCsvData(): Promise<CsvInmate[]> {
         InmateID: sampleRecord.InmateID,
         HasName: !!sampleRecord.Name,
         HasMugshotURL: !!sampleRecord.MugshotURL,
-        HasDescription: !!sampleRecord.Description
+        HasAIDescription: !!sampleRecord.AI_Description_Explanation // Changed from Description
       })}`);
     }
     
@@ -307,11 +306,11 @@ export async function getInmates(limit = 10): Promise<Inmate[]> {
     
     // Map the CSV data to the expected output format
     const mappedInmates = limitedInmates.map(inmate => {
-      // The Description field may contain pipe-delimited values, take the first one
-      const crime = inmate.Description ?
-        inmate.Description.split('|')[0].trim() :
+      // Use the AI_Description_Explanation field directly
+      const crime = inmate.AI_Description_Explanation ?
+        inmate.AI_Description_Explanation.trim() : // Changed from Description
         'Unknown charge';
-      
+
       // Parse the inmate ID, with fallback for invalid values
       let id: number;
       try {
