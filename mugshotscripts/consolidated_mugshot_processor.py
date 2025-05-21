@@ -176,9 +176,9 @@ def get_consolidated_plain_english_best_crime(raw_charge_list, inmate_name=None)
     return selected_and_rephrased_charge
 
 # --- Main Processing Function ---
-def process_inmate_data(df, output_column_name="AI_Description_Explanation"):
+def process_inmate_data(df, output_column_name="Best_Crime"):
     """
-    Processes the DataFrame to add the 'AI_Description_Explanation' column using the consolidated AI call.
+    Processes the DataFrame to add the 'Best_Crime' column using the consolidated AI call.
     Assumes 'Description' column exists for raw charges.
     """
     log_message(f"Initializing '{output_column_name}' column...")
@@ -232,7 +232,7 @@ def process_inmate_data(df, output_column_name="AI_Description_Explanation"):
             log_message(f'  Processing {len(combined_charge_details_list)} combined charge detail(s) for this inmate: "{str(combined_charge_details_list)[:250]}..."')
             # Call the AI function with the new list of combined details
             best_crime_for_row = get_consolidated_plain_english_best_crime(combined_charge_details_list, row.get('Name', 'N/A'))
-            log_message(f'  Consolidated AI Explanation: "{best_crime_for_row}"')
+            log_message(f'  Consolidated Best Crime: "{best_crime_for_row}"')
         
         df.loc[index, output_column_name] = best_crime_for_row
         
@@ -357,7 +357,7 @@ def main():
                 # Combine all processed batches so far and save
                 current_full_processed_df = pd.concat(processed_dfs, ignore_index=True)
                 
-                # Update the original df_to_process with the new 'AI_Description_Explanation' column values from this batch
+                # Update the original df_to_process with the new 'Best_Crime' column values from this batch
                 # This ensures that if we re-save the full df, it has all processed data up to this point.
                 for original_idx, processed_row in processed_batch_df.iterrows():
                     # Find the corresponding row in df_to_process using InmateID (assuming it's unique after sorting and dropping NAs)

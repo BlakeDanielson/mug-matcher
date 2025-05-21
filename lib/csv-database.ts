@@ -7,7 +7,7 @@ interface CsvInmate {
   InmateID: string;
   Name: string;
   MugshotURL: string;
-  AI_Description_Explanation: string; // Changed from Description
+  Best_Crime: string; // Changed from AI_Description_Explanation
   // Other fields are available but not needed for our implementation
 }
 
@@ -243,11 +243,11 @@ async function loadCsvData(): Promise<CsvInmate[]> {
                              'InmateID' in firstRecord &&
                               'Name' in firstRecord &&
                               'MugshotURL' in firstRecord &&
-                              'AI_Description_Explanation' in firstRecord; // Changed from Description
+                              'Best_Crime' in firstRecord; // Changed from AI_Description_Explanation
     
     if (!hasRequiredFields) {
-      console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, AI_Description_Explanation. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
-      throw new Error(`CSV data is missing required fields (expected InmateID, Name, MugshotURL, AI_Description_Explanation). The file format may be incorrect.`);
+      console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, Best_Crime. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
+      throw new Error(`CSV data is missing required fields (expected InmateID, Name, MugshotURL, Best_Crime). The file format may be incorrect.`);
     }
 
     // Cache the data
@@ -261,7 +261,7 @@ async function loadCsvData(): Promise<CsvInmate[]> {
         InmateID: sampleRecord.InmateID,
         HasName: !!sampleRecord.Name,
         HasMugshotURL: !!sampleRecord.MugshotURL,
-        HasAIDescription: !!sampleRecord.AI_Description_Explanation // Changed from Description
+        HasBestCrime: !!sampleRecord.Best_Crime // Changed from HasAIDescription and AI_Description_Explanation
       })}`);
     }
     
@@ -306,9 +306,9 @@ export async function getInmates(limit = 10): Promise<Inmate[]> {
     
     // Map the CSV data to the expected output format
     const mappedInmates = limitedInmates.map(inmate => {
-      // Use the AI_Description_Explanation field directly
-      const crime = inmate.AI_Description_Explanation ?
-        inmate.AI_Description_Explanation.trim() : // Changed from Description
+      // Use the Best_Crime field directly
+      const crime = inmate.Best_Crime ?
+        inmate.Best_Crime.trim() : // Changed from AI_Description_Explanation
         'Unknown charge';
 
       // Parse the inmate ID, with fallback for invalid values
