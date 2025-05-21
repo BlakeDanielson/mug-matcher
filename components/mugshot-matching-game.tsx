@@ -346,10 +346,12 @@ export default function MugshotMatchingGame() {
         <div
           className={cn(
             "relative rounded-lg overflow-hidden border-2 aspect-square transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] transform card-hover-effect",
-            // Highlight if selected or matched
-            (isSelected || (isMatched && !results?.submitted))
-              ? "border-blue-500 ring-2 ring-blue-500/50"
-              : "border-gray-700 hover:border-gray-600",
+            // Highlight based on selection or match status
+            isSelected
+              ? "border-blue-500 ring-2 ring-blue-500/50" // Blue if currently selected
+              : isMatched && !results?.submitted
+                ? "border-green-500 ring-2 ring-green-500/50" // Green if matched and game not submitted
+                : "border-gray-700 hover:border-gray-600", // Default gray
             // Removed isDragging style
             results?.submitted && !isMatched ? "opacity-50" : "" // Dim if submitted and not matched correctly
           )}
