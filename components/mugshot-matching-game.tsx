@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
-// Remove Select imports as it's being replaced
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { useToast } from "@/hooks/use-toast"
-// Removed DndContext and related imports
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose, // Added for a close button
+} from "@/components/ui/dialog" // Assuming dialog is a Shadcn UI component
 import {
   PointsManager,
   ScoreDisplay,
@@ -27,8 +34,71 @@ interface Inmate {
   crime?: string
 }
 
+// Modal for selecting a crime for a chosen mugshot
+function CrimeSelectionModal({
+  isOpen,
+  onClose,
+  selectedMugshot,
+  availableCrimes,
+  onCrimeSelect,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  selectedMugshot: Inmate
+  availableCrimes: Inmate[]
+  onCrimeSelect: (descriptionId: string) => void
+}) {
+  if (!isOpen) return null
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700 text-gray-200">
+        <DialogHeader>
+          <DialogTitle className="text-gray-100">Match Crime for: {selectedMugshot.name}</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Select a crime description below to match with this mugshot.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="my-4 flex justify-center">
+          <img 
+            src={selectedMugshot.image} 
+            alt={selectedMugshot.name} 
+            className="h-32 w-32 rounded-lg object-cover border-2 border-blue-500"
+          />
+        </div>
+        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2"> {/* Added pr-2 for scrollbar spacing */}
+          {availableCrimes.length > 0 ? (
+            availableCrimes.map((crimeDesc) => (
+              <Button
+                key={crimeDesc.id}
+                variant="outline"
+                className="w-full justify-start text-left h-auto py-2 border-gray-600 hover:bg-gray-700 hover:text-gray-100 text-gray-300 crime-card"
+                onClick={() => onCrimeSelect(crimeDesc.id.toString())}
+              >
+                {crimeDesc.crime || "Unknown Crime"}
+              </Button>
+            ))
+          ) : (
+            <p className="text-gray-400 text-center py-4">No available crimes to match.</p>
+          )}
+        </div>
+        <DialogFooter className="mt-4">
+          <DialogClose asChild>
+            <Button type="button" variant="secondary" className="border-gray-600 text-gray-200 hover:bg-gray-700">
+              Cancel
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function MugshotMatchingGame() {
   const { toast } = useToast()
+  const isMobile = useIsMobile()
+  const shouldUseModalUX = isMobile
+
   const [inmates, setInmates] = useState<Inmate[]>([])
   const [shuffledMugshotImages, setShuffledMugshotImages] = useState<Inmate[]>([]) // Renamed from shuffledCrimes
   const [shuffledCrimeDescriptions, setShuffledCrimeDescriptions] = useState<Inmate[]>([]) // Renamed from shuffledMugshots
@@ -46,6 +116,7 @@ export default function MugshotMatchingGame() {
   // Removed activeDragId state
   const [selectedMugshotId, setSelectedMugshotId] = useState<string | null>(null) // State for selected mugshot
   const [selectedDescriptionId, setSelectedDescriptionId] = useState<string | null>(null) // State for selected description
+  const [isCrimeModalOpen, setIsCrimeModalOpen] = useState<boolean>(false); // State for crime selection modal
 
   // Points system state
   const [currentPoints, setCurrentPoints] = useState<number>(0)
@@ -339,8 +410,13 @@ export default function MugshotMatchingGame() {
 
     return (
       <div
-        className="space-y-2 cursor-pointer" // Added cursor-pointer
-        onClick={() => setSelectedMugshotId(mugshot.id.toString())} // Added onClick handler
+        className="space-y-2 cursor-pointer" 
+        onClick={() => {
+          setSelectedMugshotId(mugshot.id.toString());
+          if (shouldUseModalUX) {
+            setIsCrimeModalOpen(true);
+          }
+        }} 
       >
         {/* Inmate image */}
         <div
@@ -403,28 +479,28 @@ export default function MugshotMatchingGame() {
 
   // Selectable Crime Description Component (Renamed from DroppableCrimeDescription)
   function SelectableDescription({ description }: { description: Inmate }) {
-    // Removed useDroppable hook and isOver variable
-
     const matchedMugshotId = matches[description.id.toString()];
     const matchedMugshotData = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
-    const isSelected = selectedDescriptionId === description.id.toString(); // Check if this description is selected
+    const isSelectedForDesktopUX = !shouldUseModalUX && selectedDescriptionId === description.id.toString();
 
     return (
       <div
-        // Removed setNodeRef
         className={cn(
-          "p-5 rounded-lg border transition-all shadow-md crime-card min-h-[150px] flex flex-col justify-between cursor-pointer", // Added cursor-pointer
-          // Highlight based on selection or match result
-          isSelected
-            ? "border-blue-500 ring-2 ring-blue-500/50" // Highlight if selected
+          "p-5 rounded-lg border transition-all shadow-md crime-card min-h-[150px] flex flex-col justify-between",
+          !shouldUseModalUX && "cursor-pointer hover:border-gray-600 hover:shadow-lg", // Interactive for desktop/iPad
+          isSelectedForDesktopUX // Apply blue border if selected in desktop/iPad UX
+            ? "border-blue-500 ring-2 ring-blue-500/50"
             : results?.submitted && results.correctMatches.includes(description.id)
               ? "border-green-500 bg-green-900/20" // Correctly matched description
               : results?.submitted
                 ? "border-red-500 bg-red-900/20" // Incorrectly matched description
-                : "border-gray-700 hover:border-gray-600 bg-gradient-to-b from-gray-900/80 to-gray-800/50 hover:shadow-lg",
-          // Removed isOver and activeDragId styles
+                : "border-gray-700 bg-gradient-to-b from-gray-900/80 to-gray-800/50",
         )}
-        onClick={() => setSelectedDescriptionId(description.id.toString())} // Added onClick handler
+        onClick={() => {
+          if (!shouldUseModalUX) {
+            setSelectedDescriptionId(description.id.toString());
+          }
+        }}
       >
         <div className="flex-grow">
           {/* Display the crime description text */}
@@ -443,7 +519,7 @@ export default function MugshotMatchingGame() {
           ) : (
             <div className="text-sm text-gray-500 italic">
               {/* Updated placeholder text */}
-              {isSelected ? "Selected" : matchedMugshotData ? "" : "Click to select"}
+              {isSelectedForDesktopUX ? "Selected" : matchedMugshotData ? "" : "Click to select"}
             </div>
           )}
 
@@ -511,6 +587,23 @@ export default function MugshotMatchingGame() {
             </div>
           </div>
         </div>
+
+        {/* Render CrimeSelectionModal */}
+        {shouldUseModalUX && selectedMugshotId && getInmateDataById(selectedMugshotId) && (
+          <CrimeSelectionModal
+            isOpen={isCrimeModalOpen}
+            onClose={() => setIsCrimeModalOpen(false)}
+            selectedMugshot={getInmateDataById(selectedMugshotId)!} 
+            availableCrimes={shuffledCrimeDescriptions.filter(
+              // A crime is available if no mugshot is currently matched to its description ID
+              (desc) => !matches[desc.id.toString()]
+            )}
+            onCrimeSelect={(descriptionId) => {
+              setSelectedDescriptionId(descriptionId); // This will trigger the useEffect for matching
+              setIsCrimeModalOpen(false);
+            }}
+          />
+        )}
 
         {/* Results section */}
         {results?.submitted && (
