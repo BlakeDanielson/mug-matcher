@@ -1,0 +1,12 @@
+This is where you would place a cyberpunk-style video background:
+- cyberpunk-city.mp4
+- matrix-rain.mp4
+- digital-circuit.mp4
+
+The video should be:
+- Short duration (10-30 seconds) and looped
+- Low opacity (around 30%) so it doesn't interfere with the game
+- Optimized for web (compressed)
+- Resolution around 1920x1080 or lower
+
+For now, the background will work without the video and show the animated grid and particles instead. 

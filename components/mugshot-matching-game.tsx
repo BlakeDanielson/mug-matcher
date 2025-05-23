@@ -10,6 +10,10 @@ import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy, 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useToast } from "@/hooks/use-toast"
+import { motion } from "framer-motion"
+import { CyberpunkBackground } from "@/components/ui/cyberpunk-background"
+import { SpotlightEffect } from "@/components/ui/spotlight-effect"
+import { ParticleExplosion } from "@/components/ui/particle-explosion"
 import {
   Dialog,
   DialogContent,
@@ -248,6 +252,8 @@ export default function MugshotMatchingGame() {
   const [inmates, setInmates] = useState<Inmate[]>([])
   const [shuffledMugshotImages, setShuffledMugshotImages] = useState<Inmate[]>([])
   const [shuffledCrimeDescriptions, setShuffledCrimeDescriptions] = useState<Inmate[]>([])
+  const [selectedMugshotId, setSelectedMugshotId] = useState<string | null>(null)
+  const [selectedDescriptionId, setSelectedDescriptionId] = useState<string | null>(null)
   const [matches, setMatches] = useState<Record<string, string | null>>({})
   const [results, setResults] = useState<{
     score: number
@@ -255,13 +261,18 @@ export default function MugshotMatchingGame() {
     percentage: number
     submitted: boolean
     correctMatches: number[]
-    pointsEarned: number
+    incorrectMatches: number[]
+    totalCorrect: number
+    totalIncorrect: number
+    accuracy: number
+    pointsEarned?: number
   } | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedMugshotId, setSelectedMugshotId] = useState<string | null>(null)
-  const [selectedDescriptionId, setSelectedDescriptionId] = useState<string | null>(null)
-  const [isCrimeModalOpen, setIsCrimeModalOpen] = useState<boolean>(false)
+  const [selectedMugshotForModal, setSelectedMugshotForModal] = useState<Inmate | null>(null)
+  const [availableCrimesForModal, setAvailableCrimesForModal] = useState<Inmate[]>([])
+  const [hasGameStarted, setHasGameStarted] = useState(false)
+  const [isCrimeModalOpen, setIsCrimeModalOpen] = useState(false)
 
   // Points system state
   const [currentPoints, setCurrentPoints] = useState<number>(0)
@@ -273,7 +284,24 @@ export default function MugshotMatchingGame() {
   const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({})
   const gameStartTimeRef = useRef<number>(Date.now())
 
+  // Particle explosion state
+  const [explosions, setExplosions] = useState<{
+    id: string
+    x: number
+    y: number
+    trigger: boolean
+  }[]>([])
 
+  // Add explosion function
+  const triggerExplosion = (x: number, y: number) => {
+    const explosionId = Date.now().toString()
+    setExplosions(prev => [...prev, { id: explosionId, x, y, trigger: true }])
+    
+    // Remove explosion after animation
+    setTimeout(() => {
+      setExplosions(prev => prev.filter(exp => exp.id !== explosionId))
+    }, 2000)
+  }
 
   // Fetch inmate data from the API
   useEffect(() => {
@@ -354,8 +382,6 @@ export default function MugshotMatchingGame() {
       }
     }
   }, [])
-
-
 
   // Effect to handle matching when both a mugshot and description are selected
   useEffect(() => {
@@ -446,7 +472,6 @@ export default function MugshotMatchingGame() {
     // Ensure all descriptions have a non-null match value
     const allDescriptionsMatched = shuffledCrimeDescriptions.length === Object.values(matches).filter(v => v !== null).length;
 
-
     if (!allDescriptionsMatched) {
       toast({
         title: "Incomplete Matches",
@@ -513,6 +538,10 @@ export default function MugshotMatchingGame() {
       percentage,
       submitted: true,
       correctMatches: correctMatches.map(id => Number(id)), // Convert back to numbers if needed elsewhere, though string IDs are fine here
+      incorrectMatches: [],
+      totalCorrect: correctMatches.length,
+      totalIncorrect: 0,
+      accuracy: percentage,
       pointsEarned: totalPointsEarned
     })
 
@@ -533,33 +562,22 @@ export default function MugshotMatchingGame() {
   // If loading, show a loading state
   if (loading) {
     return (
-      <div className="w-full max-w-4xl">
-        <Card className="p-6 shadow-lg bg-gray-800 border-gray-700 flex items-center justify-center">
-          <div className="text-center py-12">
-            <div className="animate-spin h-8 w-8 border-4 border-gray-600 border-t-blue-400 rounded-full mx-auto mb-4"></div>
-            <p className="text-lg text-gray-300">Loading mugshot data...</p>
-          </div>
-        </Card>
-      </div>
+      <CyberpunkBackground intensity="medium" showParticles={true} showGrid={true}>
+        <div className="flex justify-center items-center min-h-screen p-6">
+          <GameSkeleton />
+        </div>
+      </CyberpunkBackground>
     )
   }
 
   // If error, show an error state
   if (error) {
     return (
-      <div className="w-full max-w-4xl">
-        <Card className="p-6 shadow-lg bg-gray-800 border-gray-700">
-          <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-red-400 mb-2">Error Loading Data</h2>
-            <p className="text-gray-300 mb-6">{error}</p>
-            <Button onClick={() => window.location.reload()} variant="outline" className="border-gray-600 text-gray-200 hover:bg-gray-700">
-              Try Again
-              <RefreshCw className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </Card>
-      </div>
+      <CyberpunkBackground intensity="low" showParticles={true} showGrid={false}>
+        <div className="flex justify-center items-center min-h-screen p-6">
+          <GameError error={error} onRetry={retryFetch} />
+        </div>
+      </CyberpunkBackground>
     )
   }
 
@@ -567,33 +585,47 @@ export default function MugshotMatchingGame() {
   function SelectableMugshot({ mugshot, index }: { mugshot: Inmate; index: number }) {
     const isMatched = Object.values(matches).includes(mugshot.id.toString());
     const isSelected = selectedMugshotId === mugshot.id.toString();
+    const cardRef = useRef<HTMLDivElement>(null);
 
-    const handleMugshotClick = () => {
+    const handleMugshotClick = (e: React.MouseEvent) => {
       setSelectedMugshotId(mugshot.id.toString());
+      
+      // Trigger particle explosion on click
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        triggerExplosion(x, y);
+      }
+      
       if (shouldUseModalUX) {
         setIsCrimeModalOpen(true);
       }
     };
 
     return (
-      <div
+      <motion.div
+        ref={cardRef}
         className="space-y-2 cursor-pointer group" 
         onClick={handleMugshotClick}
-        style={{ animationDelay: `${index * 100}ms` }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1, duration: 0.5 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         <div
-                  className={cn(
-          "relative rounded-xl overflow-hidden border-2 aspect-square transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-[1.03] transform",
-          "bg-gradient-to-b from-gray-800/50 to-gray-900/80 backdrop-blur-sm",
-          isSelected
-            ? "border-blue-500 ring-2 ring-blue-500/50 shadow-blue-500/30" 
-            : isMatched && !results?.submitted
-              ? "border-blue-500 ring-2 ring-blue-500/50 shadow-blue-500/20" 
-              : "border-gray-600 hover:border-gray-500 group-hover:shadow-gray-500/20",
-          results?.submitted && !Object.entries(matches).some(([descriptionId, matchedImageId]) =>
-            matchedImageId === mugshot.id.toString() && descriptionId === mugshot.id.toString()
-          ) && "opacity-60"
-        )}
+          className={cn(
+            "relative rounded-xl overflow-hidden border-2 aspect-square transition-all duration-300 shadow-lg backdrop-blur-sm",
+            "bg-gradient-to-b from-gray-800/50 to-gray-900/80",
+            "tilt-3d cyber-hover interactive-card",
+            isSelected && "pulse-neon animated-border cyberpunk-glow",
+            isMatched && !results?.submitted && "border-blue-500 ring-2 ring-blue-500/50 shadow-blue-500/20",
+            !isSelected && !isMatched && "border-gray-600 hover:border-gray-500",
+            results?.submitted && !Object.entries(matches).some(([descriptionId, matchedImageId]) =>
+              matchedImageId === mugshot.id.toString() && descriptionId === mugshot.id.toString()
+            ) && "opacity-60"
+          )}
         >
           <img
             src={mugshot.image || "/placeholder.svg"}
@@ -610,34 +642,55 @@ export default function MugshotMatchingGame() {
             }}
           />
           
+          {/* Holographic overlay effect */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-transparent to-magenta-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
           {/* Name overlay with enhanced styling */}
-          <div className="absolute top-3 left-3 bg-black/80 text-white px-3 py-1.5 rounded-lg text-sm font-medium backdrop-blur-sm shadow-lg border border-gray-600">
-            {mugshot.name}
-          </div>
+          <motion.div 
+            className="absolute top-3 left-3 bg-black/80 text-white px-3 py-1.5 rounded-lg text-sm font-medium backdrop-blur-sm shadow-lg border border-gray-600"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 + 0.2 }}
+          >
+            <span className="neon-text">{mugshot.name}</span>
+          </motion.div>
 
-
-
-          {/* Selection indicator */}
+          {/* Selection indicator with enhanced animation */}
           {isSelected && !results?.submitted && (
-            <div className="absolute top-3 right-3">
-              <div className="bg-blue-500 rounded-full p-2 shadow-lg pulse-slow">
+            <motion.div 
+              className="absolute top-3 right-3"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <div className="bg-blue-500 rounded-full p-2 shadow-lg pulse-neon">
                 <Star className="h-4 w-4 text-white" />
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Match indicator */}
+          {/* Match indicator with particle effect */}
           {isMatched && !results?.submitted && (
-            <div className="absolute top-3 right-3">
-              <div className="bg-blue-500 rounded-full p-2 shadow-lg">
+            <motion.div 
+              className="absolute top-3 right-3"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+            >
+              <div className="bg-blue-500 rounded-full p-2 shadow-lg cyberpunk-glow">
                 <CheckCircle2 className="h-4 w-4 text-white" />
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Results overlay */}
+          {/* Scanning beam effect for selected cards */}
+          {isSelected && (
+            <div className="scan-beam" />
+          )}
+
+          {/* Results overlay with enhanced effects */}
           {results?.submitted && (
-            <div
+            <motion.div
               className={cn(
                 "absolute bottom-0 inset-x-0 p-3 text-white text-center backdrop-blur-sm",
                 Object.entries(matches).some(
@@ -647,6 +700,9 @@ export default function MugshotMatchingGame() {
                   ? "bg-green-500/90" 
                   : "bg-red-500/90"
               )}
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
             >
               {Object.entries(matches).some(
                 ([descriptionId, matchedImageId]) =>
@@ -667,12 +723,10 @@ export default function MugshotMatchingGame() {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
-
-
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -786,240 +840,309 @@ export default function MugshotMatchingGame() {
           </div>
         )}
 
-
       </div>
     );
-  }
-
-
-  // Show loading state
-  if (loading) {
-    return <GameSkeleton />
-  }
-
-  // Show error state
-  if (error) {
-    return <GameError error={error} onRetry={retryFetch} />
   }
 
   const totalMatches = Object.values(matches).filter(Boolean).length
   const correctMatches = Object.entries(matches).filter(([key, value]) => value === key).length
 
   return (
-    <div className="w-full max-w-4xl fade-in game-container">
-      <Card className="p-6 shadow-xl bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700">
-        {/* Enhanced Points display */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-blue-900/50 to-blue-800/50 px-4 py-2 rounded-lg border border-blue-700/50 shadow-lg">
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-blue-400" />
-                <span className="text-sm text-gray-400">Points:</span>
-                <span id="current-score" className="font-bold text-blue-400 text-lg">{formatPoints(currentPoints)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-amber-900/50 to-amber-800/50 px-4 py-2 rounded-lg border border-amber-700/50 flex items-center shadow-lg">
-              <Trophy className="h-4 w-4 text-amber-500 mr-2" />
-              <span className="text-sm text-gray-400">High Score:</span>
-              <span id="high-score" className="font-bold text-amber-400 ml-2 text-lg">{formatPoints(highScore)}</span>
-            </div>
-          </div>
-        </div>
+    <CyberpunkBackground 
+      intensity="high" 
+      showParticles={true} 
+      showGrid={true}
+      videoUrl="/cyberpunk-city.mp4" // Optional: add a cyberpunk video background
+    >
+      <SpotlightEffect intensity={0.6} color="rgba(0, 255, 255, 0.2)" size={400}>
+        <div className="flex justify-center items-center min-h-screen p-6 relative">
+          {/* Particle Explosions */}
+          {explosions.map((explosion) => (
+            <ParticleExplosion
+              key={explosion.id}
+              trigger={explosion.trigger}
+              x={explosion.x}
+              y={explosion.y}
+              intensity="high"
+              colors={['#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff6b35']}
+              onComplete={() => {
+                setExplosions(prev => prev.filter(exp => exp.id !== explosion.id))
+              }}
+            />
+          ))}
 
-        {/* Game Stats */}
-        {!results?.submitted && (
-          <GameStats 
-            totalMatches={totalMatches}
-            correctMatches={correctMatches}
-            gameStartTime={gameStartTimeRef.current}
-          />
-        )}
-
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-200 mb-2">Criminal Lineup Challenge</h1>
-          <p className="text-lg text-gray-300">Match each criminal with their crime</p>
-        </div>
-
-        {/* Game board */}
-        <div className="space-y-8">
-          {/* Inmate images section at the top */}
-          {/* Mugshots Section (Selectable Items) */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-200 mb-4">Mugshots (Click one)</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
-              {shuffledMugshotImages.map((mugshot, index) => (
-                <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
-              ))}
-              {/* Removed extra closing braces */}
-            </div>
-          </div>
-
-          {/* Crime Descriptions Section (Selectable Areas) */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-200 mb-4">Crime Descriptions (Click one)</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {shuffledCrimeDescriptions.map((description) => (
-                <SelectableDescription key={description.id} description={description} />
-              ))}
-              {/* Removed extra closing braces */}
-            </div>
-          </div>
-        </div>
-
-        {/* Render CrimeSelectionModal */}
-        {shouldUseModalUX && selectedMugshotId && getInmateDataById(selectedMugshotId) && (
-          <CrimeSelectionModal
-            isOpen={isCrimeModalOpen}
-            onClose={() => setIsCrimeModalOpen(false)}
-            selectedMugshot={getInmateDataById(selectedMugshotId)!} 
-            availableCrimes={shuffledCrimeDescriptions.filter(
-              // A crime is available if no mugshot is currently matched to its description ID
-              (desc) => !matches[desc.id.toString()]
-            )}
-            onCrimeSelect={(descriptionId) => {
-              setSelectedDescriptionId(descriptionId); // This will trigger the useEffect for matching
-              setIsCrimeModalOpen(false);
-            }}
-          />
-        )}
-
-        {/* Enhanced Results section */}
-        {results?.submitted && (
-          <div className="mt-8 p-8 bg-gradient-to-br from-gray-900/90 to-gray-800/70 rounded-2xl border border-gray-700 shadow-2xl backdrop-blur-sm">
-            <div className="text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <div className={cn(
-                  "p-4 rounded-full shadow-lg",
-                  results.percentage >= 80 ? "bg-green-500" : results.percentage >= 60 ? "bg-yellow-500" : "bg-red-500"
-                )}>
-                  {results.percentage >= 80 ? (
-                    <Trophy className="h-8 w-8 text-white" />
-                  ) : results.percentage >= 60 ? (
-                    <Star className="h-8 w-8 text-white" />
-                  ) : (
-                    <Target className="h-8 w-8 text-white" />
-                  )}
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold text-center mb-2 text-gray-200">Game Results</h2>
-              <p className={cn(
-                "text-lg font-medium",
-                results.percentage >= 80 ? "text-green-400" : results.percentage >= 60 ? "text-yellow-400" : "text-red-400"
-              )}>
-                {results.percentage >= 80 ? "Excellent Work!" : results.percentage >= 60 ? "Good Job!" : "Keep Practicing!"}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-              <div className="text-center p-4 bg-gray-800/50 rounded-xl border border-gray-600">
-                <div className="flex items-center justify-center mb-2">
-                  <Target className="h-5 w-5 text-blue-400 mr-2" />
-                  <span className="text-sm text-gray-400">Score</span>
-                </div>
-                <p className="text-3xl font-bold text-gray-100">
-                  {results.score}/{results.total}
-                </p>
-              </div>
-              
-              <div className="text-center p-4 bg-gray-800/50 rounded-xl border border-gray-600">
-                <div className="flex items-center justify-center mb-2">
-                  <Zap className="h-5 w-5 text-purple-400 mr-2" />
-                  <span className="text-sm text-gray-400">Accuracy</span>
-                </div>
-                <p className={cn(
-                  "text-3xl font-bold",
-                  results.percentage >= 80 ? "text-green-400" : results.percentage >= 60 ? "text-yellow-400" : "text-red-400"
-                )}>
-                  {results.percentage}%
-                </p>
-              </div>
-
-              {results.pointsEarned > 0 && (
-                <div className="text-center p-4 bg-blue-800/30 rounded-xl border border-blue-600">
-                  <div className="flex items-center justify-center mb-2">
-                    <Star className="h-5 w-5 text-blue-400 mr-2" />
-                    <span className="text-sm text-gray-400">Points Earned</span>
+          <Card className="w-full max-w-4xl p-8 shadow-2xl bg-gradient-to-b from-gray-900/80 to-gray-800/60 border border-cyan-500/30 backdrop-blur-md interactive-card">
+            {/* Score Display */}
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-6">
+                <div className="bg-gradient-to-r from-blue-900/50 to-blue-800/50 px-4 py-2 rounded-lg border border-blue-700/50 shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-blue-400" />
+                    <span className="text-sm text-gray-400">Points:</span>
+                    <span id="current-score" className="font-bold text-blue-400 text-lg neon-text">{formatPoints(currentPoints)}</span>
                   </div>
-                  <p className="text-3xl font-bold text-blue-400">+{results.pointsEarned}</p>
                 </div>
-              )}
-            </div>
-            
-            <div className="text-center space-y-2">
-              <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700">
-                <p className="text-gray-300 mb-1">Total Score</p>
-                <p className="text-2xl font-bold text-blue-400">{formatPoints(currentPoints)}</p>
+                <div className="flex items-center">
+                  <Trophy className="h-4 w-4 text-amber-500 mr-2" />
+                  <span className="text-sm text-gray-400">High Score:</span>
+                  <span id="high-score" className="font-bold text-amber-400 ml-2 text-lg neon-text">{formatPoints(highScore)}</span>
+                </div>
               </div>
-              
-              {currentPoints >= highScore && currentPoints > 0 && (
-                <div className="p-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 rounded-xl border border-amber-500/30 animate-pulse">
-                  <p className="text-amber-400 flex items-center justify-center font-semibold">
-                    <Trophy className="h-5 w-5 mr-2" />
-                    🎉 New High Score! 🎉
+            </div>
+
+            {/* Game Stats */}
+            {!results?.submitted && (
+              <GameStats 
+                totalMatches={totalMatches}
+                correctMatches={correctMatches}
+                gameStartTime={gameStartTimeRef.current}
+              />
+            )}
+
+            <div className="mb-6 text-center">
+              <motion.h1 
+                className="text-3xl font-bold text-gray-200 mb-2 hologram"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                Criminal Lineup Challenge
+              </motion.h1>
+              <motion.p 
+                className="text-lg text-gray-300"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+              >
+                Match each criminal with their crime
+              </motion.p>
+            </div>
+
+            {/* Game board */}
+            <div className="space-y-8">
+              {/* Mugshots Section */}
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                <h2 className="text-xl font-semibold text-gray-200 mb-4 neon-text">Mugshots (Click one)</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
+                  {shuffledMugshotImages.map((mugshot, index) => (
+                    <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Crime Descriptions Section */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+              >
+                <h2 className="text-xl font-semibold text-gray-200 mb-4 neon-text">Crime Descriptions (Click one)</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                  {shuffledCrimeDescriptions.map((description, index) => (
+                    <motion.div
+                      key={description.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.8 + index * 0.1, duration: 0.5 }}
+                    >
+                      <SelectableDescription description={description} />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Crime Selection Modal */}
+            {shouldUseModalUX && selectedMugshotId && getInmateDataById(selectedMugshotId) && (
+              <CrimeSelectionModal
+                isOpen={isCrimeModalOpen}
+                onClose={() => setIsCrimeModalOpen(false)}
+                selectedMugshot={getInmateDataById(selectedMugshotId)!} 
+                availableCrimes={shuffledCrimeDescriptions.filter(
+                  (desc) => !matches[desc.id.toString()]
+                )}
+                onCrimeSelect={(descriptionId) => {
+                  setSelectedDescriptionId(descriptionId);
+                  setIsCrimeModalOpen(false);
+                }}
+              />
+            )}
+
+            {/* Enhanced Results section */}
+            {results?.submitted && (
+              <motion.div 
+                className="mt-8 p-8 bg-gradient-to-br from-gray-900/90 to-gray-800/70 rounded-2xl border border-cyan-500/30 shadow-2xl backdrop-blur-sm interactive-card"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <div className="text-center mb-6">
+                  <motion.div 
+                    className="flex justify-center mb-4"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+                  >
+                    <div className={cn(
+                      "p-4 rounded-full shadow-lg cyberpunk-glow",
+                      results.percentage >= 80 ? "bg-green-500" : results.percentage >= 60 ? "bg-yellow-500" : "bg-red-500"
+                    )}>
+                      {results.percentage >= 80 ? (
+                        <Trophy className="h-8 w-8 text-white" />
+                      ) : results.percentage >= 60 ? (
+                        <Star className="h-8 w-8 text-white" />
+                      ) : (
+                        <Target className="h-8 w-8 text-white" />
+                      )}
+                    </div>
+                  </motion.div>
+                  <h2 className="text-2xl font-bold text-center mb-2 text-gray-200 neon-text">Game Results</h2>
+                  <p className={cn(
+                    "text-lg font-medium hologram",
+                    results.percentage >= 80 ? "text-green-400" : results.percentage >= 60 ? "text-yellow-400" : "text-red-400"
+                  )}>
+                    {results.percentage >= 80 ? "Excellent Work!" : results.percentage >= 60 ? "Good Job!" : "Keep Practicing!"}
                   </p>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* Enhanced Action buttons */}
-        <div className="mt-10 flex justify-center gap-4">
-          {!results?.submitted ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={totalMatches < 6}
-              className={cn(
-                "px-12 py-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-none shadow-xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.05] transform submit-button text-lg font-semibold",
-                totalMatches < 6 && "opacity-50 cursor-not-allowed hover:scale-100"
-              )}
-              size="lg"
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                  <motion.div 
+                    className="text-center p-4 bg-gray-800/50 rounded-xl border border-gray-600 interactive-card"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <Target className="h-5 w-5 text-blue-400 mr-2" />
+                      <span className="text-sm text-gray-400">Score</span>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-100 neon-text">
+                      {results.score}/{results.total}
+                    </p>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="text-center p-4 bg-gray-800/50 rounded-xl border border-gray-600 interactive-card"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <Zap className="h-5 w-5 text-purple-400 mr-2" />
+                      <span className="text-sm text-gray-400">Accuracy</span>
+                    </div>
+                    <p className={cn(
+                      "text-3xl font-bold neon-text",
+                      results.percentage >= 80 ? "text-green-400" : results.percentage >= 60 ? "text-yellow-400" : "text-red-400"
+                    )}>
+                      {results.percentage}%
+                    </p>
+                  </motion.div>
+
+                  {results.pointsEarned && results.pointsEarned > 0 && (
+                    <motion.div 
+                      className="text-center p-4 bg-blue-800/30 rounded-xl border border-blue-600 interactive-card"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.9 }}
+                    >
+                      <div className="flex items-center justify-center mb-2">
+                        <Star className="h-5 w-5 text-blue-400 mr-2" />
+                        <span className="text-sm text-gray-400">Points Earned</span>
+                      </div>
+                      <p className="text-3xl font-bold text-blue-400 neon-text">+{results.pointsEarned}</p>
+                    </motion.div>
+                  )}
+                </div>
+                
+                <div className="text-center space-y-2">
+                  <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700">
+                    <p className="text-gray-300 mb-1">Total Score</p>
+                    <p className="text-2xl font-bold text-blue-400 neon-text">{formatPoints(currentPoints)}</p>
+                  </div>
+                  
+                  {currentPoints >= highScore && currentPoints > 0 && (
+                    <motion.div 
+                      className="p-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 rounded-xl border border-amber-500/30 cyberpunk-glow"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 1, type: "spring", stiffness: 200 }}
+                    >
+                      <p className="text-amber-400 flex items-center justify-center font-semibold neon-text">
+                        <Trophy className="h-5 w-5 mr-2" />
+                        🎉 New High Score! 🎉
+                      </p>
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Enhanced Action buttons */}
+            <motion.div 
+              className="mt-10 flex justify-center gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 0.5 }}
             >
-              {totalMatches < 6 ? (
-                <>
-                  Complete All Matches ({totalMatches}/6)
-                  <Target className="ml-2 h-5 w-5" />
-                </>
-              ) : (
-                <>
-                  Submit Answers
-                  <ArrowRightLeft className="ml-2 h-5 w-5" />
-                </>
-              )}
-            </Button>
-          ) : (
-            <div className="flex gap-4">
-              <Button
-                onClick={() => resetGame()}
-                className="px-12 py-6 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-gray-200 shadow-xl hover:shadow-gray-500/20 transition-all duration-300 hover:scale-[1.05] transform text-lg font-semibold"
-                size="lg"
-              >
-                Play Again
-                <RefreshCw className="ml-2 h-5 w-5" />
-              </Button>
-              
-              {results.percentage >= 80 && (
+              {!results?.submitted ? (
                 <Button
-                  onClick={() => {
-                    toast({
-                      title: "🎉 Congratulations!",
-                      description: "You achieved an excellent score! Share your success with friends.",
-                    })
-                  }}
-                  className="px-8 py-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.05] transform text-lg font-semibold"
+                  onClick={handleSubmit}
+                  disabled={totalMatches < 6}
+                  className={cn(
+                    "px-12 py-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-none shadow-xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.05] transform submit-button text-lg font-semibold cyberpunk-glow",
+                    totalMatches < 6 && "opacity-50 cursor-not-allowed hover:scale-100"
+                  )}
                   size="lg"
                 >
-                  <Trophy className="mr-2 h-5 w-5" />
-                  Share
+                  {totalMatches < 6 ? (
+                    <>
+                      Complete All Matches ({totalMatches}/6)
+                      <Target className="ml-2 h-5 w-5" />
+                    </>
+                  ) : (
+                    <>
+                      Submit Answers
+                      <ArrowRightLeft className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
+              ) : (
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => resetGame()}
+                    className="px-12 py-6 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-gray-200 shadow-xl hover:shadow-gray-500/20 transition-all duration-300 hover:scale-[1.05] transform text-lg font-semibold cyber-hover"
+                    size="lg"
+                  >
+                    Play Again
+                    <RefreshCw className="ml-2 h-5 w-5" />
+                  </Button>
+                  
+                  {results.percentage >= 80 && (
+                    <Button
+                      onClick={() => {
+                        toast({
+                          title: "🎉 Congratulations!",
+                          description: "You achieved an excellent score! Share your success with friends.",
+                        })
+                      }}
+                      className="px-8 py-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.05] transform text-lg font-semibold cyberpunk-glow"
+                      size="lg"
+                    >
+                      <Trophy className="mr-2 h-5 w-5" />
+                      Share
+                    </Button>
+                  )}
+                </div>
               )}
-            </div>
-          )}
+            </motion.div>
+          </Card>
         </div>
-      </Card>
-    </div>
-    // Removed closing DndContext tag
+      </SpotlightEffect>
+    </CyberpunkBackground>
   )
 }
