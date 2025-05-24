@@ -989,7 +989,7 @@ export default function MugshotMatchingGame() {
               Crime Descriptions (Click one)
             </motion.h2>
             <motion.div 
-              className="grid grid-cols-2 md:grid-cols-3 gap-5"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 1.0, duration: 0.8 } : { duration: 0 }}
