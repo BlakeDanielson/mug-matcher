@@ -45,7 +45,7 @@ interface Inmate {
 // Enhanced Loading Component
 function GameSkeleton() {
   return (
-    <div className="w-full max-w-4xl">
+    <div className="w-full max-w-7xl">
       <Card className="p-6 shadow-lg bg-gray-900/50 border-gray-700">
         <div className="flex justify-between items-center mb-4">
           <Skeleton className="h-8 w-24 bg-gray-200" />
@@ -89,7 +89,7 @@ function GameSkeleton() {
 // Enhanced Error Component
 function GameError({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="w-full max-w-4xl">
+    <div className="w-full max-w-7xl">
       <Card className="p-8 shadow-lg bg-red-50 border-red-200">
         <div className="text-center space-y-4">
           <div className="flex justify-center">
