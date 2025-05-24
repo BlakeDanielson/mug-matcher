@@ -322,7 +322,7 @@ export default function MugshotMatchingGame() {
         // Use placeholder data if API fails
         const placeholderData = [
           { id: 1, name: "John Doe", image: "/placeholder.svg?key=cfqyy" },
-          { id: 2, name: "Jane Smith", image: "/placeholder.svg?key=j2s7m" },
+          { id: 2, name: "Jane Smith", image: "/.svg?key=j2s7m" },
           { id: 3, name: "Mike Johnson", image: "/placeholder.svg?key=p9r4t" },
           { id: 4, name: "Sarah Williams", image: "/placeholder.svg?key=5a1tv" },
           { id: 5, name: "Robert Brown", image: "/placeholder.svg?key=k8paz" },

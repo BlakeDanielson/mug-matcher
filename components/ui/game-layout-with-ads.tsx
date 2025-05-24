@@ -46,7 +46,7 @@ export function GameLayoutWithAds({
       )}
 
       {/* Main Content with Sidebar Layout */}
-      <div className="w-full flex gap-3 justify-center">
+      <div className="w-full flex gap-1 justify-center">
         {/* Left Sidebar Ad - Desktop Only */}
         {showSidebar && !isMobile && (
           <div className="hidden lg:flex flex-col gap-4 w-[300px] flex-shrink-0">
