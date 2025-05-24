@@ -183,6 +183,7 @@ function normalizeCrime(crime: string): string {
  */
 const RESTRICTED_CRIME_WORDS = [
   'murder',
+  'armed',
   'homicide', 
   'manslaughter',
   'killing',
