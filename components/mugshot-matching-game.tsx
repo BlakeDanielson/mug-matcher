@@ -56,10 +56,14 @@ function GameSkeleton() {
           <Skeleton className="h-6 w-64 mx-auto bg-gray-200" />
         </div>
 
-        <div className="space-y-8">
-          <div>
-            <Skeleton className="h-6 w-32 mb-4 bg-gray-200" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 min-h-[600px]">
+          {/* Left Column - Suspects Skeleton */}
+          <div className="space-y-4">
+            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700">
+              <Skeleton className="h-6 w-32 mb-2 bg-gray-200" />
+              <Skeleton className="h-4 w-48 bg-gray-200" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="aspect-square">
                   <Skeleton className="w-full h-full rounded-lg bg-gray-200" />
@@ -68,11 +72,15 @@ function GameSkeleton() {
             </div>
           </div>
 
-          <div>
-            <Skeleton className="h-6 w-40 mb-4 bg-gray-200" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {/* Right Column - Case Files Skeleton */}
+          <div className="space-y-4">
+            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700">
+              <Skeleton className="h-6 w-32 mb-2 bg-gray-200" />
+              <Skeleton className="h-4 w-56 bg-gray-200" />
+            </div>
+            <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-[150px] rounded-lg bg-gray-200" />
+                <Skeleton key={i} className="h-[120px] rounded-lg bg-gray-200" />
               ))}
             </div>
           </div>
@@ -137,29 +145,29 @@ function GameStats({
   
   return (
     <div className="flex flex-wrap justify-center gap-3 mb-4">
-      <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 px-3 py-1">
+      <Badge variant="outline" className="border-blue-500/50 bg-blue-900/30 text-blue-300 px-3 py-1">
         <Timer className="h-3 w-3 mr-1" />
         {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
       </Badge>
       
-      <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 px-3 py-1">
+      <Badge variant="outline" className="border-green-500/50 bg-green-900/30 text-green-300 px-3 py-1">
         <Target className="h-3 w-3 mr-1" />
         {correctMatches}/{totalMatches} Correct
       </Badge>
       
-      <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 px-3 py-1">
+      <Badge variant="outline" className="border-purple-500/50 bg-purple-900/30 text-purple-300 px-3 py-1">
         <Star className="h-3 w-3 mr-1" />
         {accuracy}% Accuracy
       </Badge>
       
       <div className="w-full max-w-xs">
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div className="flex justify-between text-xs text-gray-400 mb-1">
           <span>Progress</span>
           <span>{totalMatches}/6</span>
         </div>
         <Progress 
           value={progressValue} 
-          className="h-2 bg-gray-200"
+          className="h-2 bg-gray-700"
         />
       </div>
     </div>
@@ -276,6 +284,15 @@ export default function MugshotMatchingGame() {
     totalIncorrect: number
     accuracy: number
     pointsEarned?: number
+    detailedResults: Array<{
+      mugshotId: string;
+      mugshotName: string;
+      mugshotImage: string;
+      actualCrime: string;
+      userGuessId: string;
+      userGuessCrime: string;
+      isCorrect: boolean;
+    }>
   } | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -501,15 +518,43 @@ export default function MugshotMatchingGame() {
       return
     }
 
-    // Calculate score
-    const correctMatches = Object.entries(matches)
-      // Filter for entries where the description ID (key) matches the mugshot ID (value)
-      .filter(([descriptionId, matchedMugshotId]) => matchedMugshotId !== null && descriptionId === matchedMugshotId)
-      .map(([descriptionId]) => descriptionId) // Get the IDs of correctly matched descriptions
+    // Calculate score and detailed results
+    const detailedResults: Array<{
+      mugshotId: string;
+      mugshotName: string;
+      mugshotImage: string;
+      actualCrime: string;
+      userGuessId: string;
+      userGuessCrime: string;
+      isCorrect: boolean;
+    }> = [];
 
-    const score = correctMatches.length
-    const total = shuffledCrimeDescriptions.length // Use the count of descriptions as total
-    const percentage = total > 0 ? Math.round((score / total) * 100) : 0
+    Object.entries(matches).forEach(([guessedCrimeId, mugshotId]) => {
+      if (mugshotId) {
+        const mugshot = getInmateDataById(mugshotId);
+        const guessedCrime = getInmateDataById(guessedCrimeId);
+        const actualCrime = getInmateDataById(mugshotId); // The actual crime for this mugshot
+        
+        if (mugshot && guessedCrime && actualCrime) {
+          detailedResults.push({
+            mugshotId: mugshotId,
+            mugshotName: mugshot.name,
+            mugshotImage: mugshot.image,
+            actualCrime: actualCrime.crime || "Unknown crime",
+            userGuessId: guessedCrimeId,
+            userGuessCrime: guessedCrime.crime || "Unknown crime",
+            isCorrect: guessedCrimeId === mugshotId
+          });
+        }
+      }
+    });
+
+    const correctMatches = detailedResults.filter(result => result.isCorrect);
+    const incorrectMatches = detailedResults.filter(result => !result.isCorrect);
+
+    const score = correctMatches.length;
+    const total = shuffledCrimeDescriptions.length;
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
     // Calculate points
     let totalPointsEarned = 0
@@ -518,8 +563,8 @@ export default function MugshotMatchingGame() {
       // Calculate time elapsed since game start
       const timeElapsed = Date.now() - gameStartTimeRef.current
       // Process each correct match for points
-      correctMatches.forEach(descriptionId => {
-        const attemptCount = attemptCounts[descriptionId] || 1
+      correctMatches.forEach(result => {
+        const attemptCount = attemptCounts[result.userGuessId] || 1
 
         // Create match result
         const matchResult = createMatchResult(true, timeElapsed, attemptCount)
@@ -557,12 +602,13 @@ export default function MugshotMatchingGame() {
       total,
       percentage,
       submitted: true,
-      correctMatches: correctMatches.map(id => Number(id)), // Convert back to numbers if needed elsewhere, though string IDs are fine here
-      incorrectMatches: [],
+      correctMatches: correctMatches.map(result => Number(result.mugshotId)),
+      incorrectMatches: incorrectMatches.map(result => Number(result.mugshotId)),
       totalCorrect: correctMatches.length,
-      totalIncorrect: 0,
+      totalIncorrect: incorrectMatches.length,
       accuracy: percentage,
-      pointsEarned: totalPointsEarned
+      pointsEarned: totalPointsEarned,
+      detailedResults: detailedResults
     })
 
     toast({
@@ -792,9 +838,9 @@ export default function MugshotMatchingGame() {
     return (
       <div
         className={cn(
-          "p-6 rounded-xl border transition-all duration-200 shadow-md hover:shadow-lg min-h-[160px] flex flex-col justify-between",
+          "p-4 rounded-lg border transition-all duration-200 shadow-sm hover:shadow-md min-h-[100px] relative",
           "bg-gray-800/50",
-          !shouldUseModalUX && "cursor-pointer hover:border-gray-300 hover:scale-[1.02] transform",
+          !shouldUseModalUX && "cursor-pointer hover:border-gray-300 hover:scale-[1.01] transform",
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-2 ring-blue-200"
             : results?.submitted && results.correctMatches.includes(description.id)
@@ -809,97 +855,90 @@ export default function MugshotMatchingGame() {
           }
         }}
       >
-        {/* Crime description content */}
-        <div className="flex-grow">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="mt-1 p-2 rounded-full bg-gray-700 border border-gray-600">
+        {/* Main content - more compact layout */}
+        <div className="flex items-start gap-3">
+          {/* Icon or matched image */}
+          {matchedMugshotData ? (
+            <div className="relative flex-shrink-0">
+              <Image 
+                src={matchedMugshotData.image} 
+                alt={matchedMugshotData.name} 
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full object-cover border-2 border-gray-600 shadow-sm"
+              />
+              <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-0.5">
+                <CheckCircle2 className="h-3 w-3 text-white" />
+              </div>
+            </div>
+          ) : (
+            <div className="flex-shrink-0 p-2 rounded-full bg-gray-700 border border-gray-600">
               <AlertCircle className="h-4 w-4 text-gray-300" />
             </div>
-            <div className="flex-1">
-              <div className="text-lg font-medium text-gray-100 break-words whitespace-normal leading-relaxed">
-                {processedCrime || "Unknown crime"}
+          )}
+
+          {/* Crime description and status combined */}
+          <div className="flex-1 min-w-0">
+            <div className="text-base md:text-lg font-medium text-gray-100 break-words leading-snug mb-1">
+              {processedCrime || "Unknown crime"}
+            </div>
+            
+            {description.sentence && (
+              <div className="text-xs text-red-400 font-semibold mb-2">
+                Sentence: {description.sentence}
               </div>
-              {description.sentence && (
-                <div className="text-sm text-red-400 font-semibold mt-2">
-                  Sentence: {description.sentence}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+            )}
 
-        {/* Status section */}
-        <div className="mt-auto pt-4 border-t border-gray-600">
-          <div className="flex items-center justify-between min-h-[44px]">
-            <div className="flex-1">
-              {matchedMugshotData ? (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Image 
-                      src={matchedMugshotData.image} 
-                      alt={matchedMugshotData.name} 
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 rounded-full object-cover border-2 border-gray-600 shadow-sm"
-                    />
-                    <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-1">
-                      <CheckCircle2 className="h-3 w-3 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-100">{matchedMugshotData.name}</p>
-                    <p className="text-xs text-gray-400">Matched</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gray-700 border-2 border-dashed border-gray-500 flex items-center justify-center">
-                    <Target className="h-4 w-4 text-gray-300" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-300">
-                      {isSelectedForDesktopUX ? "Selected - Choose mugshot" : "Click to select"}
-                    </p>
-                    <p className="text-xs text-gray-400">No match yet</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Status info */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {matchedMugshotData ? (
+                  <>
+                    <span className="text-sm font-medium text-gray-100">{matchedMugshotData.name}</span>
+                    <span className="text-xs text-green-400 font-medium">✓ Matched</span>
+                  </>
+                ) : (
+                  <span className="text-sm text-gray-400">
+                    {isSelectedForDesktopUX ? "Selected - Choose mugshot" : "Click to select"}
+                  </span>
+                )}
+              </div>
 
-            {/* Result indicators */}
-            <div className="ml-4">
+              {/* Result indicator */}
               {results?.submitted && (
-                <div className="flex items-center">
+                <div className="flex-shrink-0">
                   {matches[description.id.toString()] === description.id.toString() ? (
                     <div className="bg-green-500 rounded-full p-1">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
+                      <CheckCircle2 className="h-4 w-4 text-white" />
                     </div>
                   ) : (
                     <div className="bg-red-500 rounded-full p-1">
-                      <XCircle className="h-5 w-5 text-white" />
+                      <XCircle className="h-4 w-4 text-white" />
                     </div>
                   )}
                 </div>
-              )}
-              
-              {isSelectedForDesktopUX && !results?.submitted && (
-                <Badge variant="outline" className="border-blue-500 text-blue-300 bg-blue-900/50">
-                  Selected
-                </Badge>
               )}
             </div>
           </div>
         </div>
 
         {/* Selection indicator overlay */}
-        {isSelectedForDesktopUX && (
-          <div className="absolute top-3 right-3">
+        {isSelectedForDesktopUX && !results?.submitted && (
+          <div className="absolute top-2 right-2">
             <div className="bg-blue-500 rounded-full p-1 shadow-lg">
-              <Star className="h-4 w-4 text-white" />
+              <Star className="h-3 w-3 text-white" />
             </div>
           </div>
         )}
 
+        {/* Selected badge for desktop */}
+        {isSelectedForDesktopUX && !results?.submitted && (
+          <div className="absolute top-2 left-2">
+            <Badge variant="outline" className="border-blue-500 text-blue-300 bg-blue-900/80 text-xs px-2 py-0.5">
+              Selected
+            </Badge>
+          </div>
+        )}
       </div>
     );
   }
@@ -946,24 +985,29 @@ export default function MugshotMatchingGame() {
           </p>
         </div>
 
-        {/* Game board */}
-        <div className="space-y-6">
-          {/* Mugshots Section */}
+        {/* Game board - Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 min-h-[600px]">
+          {/* Left Column - Mugshots Section */}
           <motion.div
-            initial={animationsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={animationsEnabled ? { duration: 0.6 } : { duration: 0 }}
+            className="space-y-4 lg:border-r lg:border-gray-700 lg:pr-4"
           >
-            <motion.h2 
-              className="text-xl font-semibold text-gray-100 mb-3"
-              initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={animationsEnabled ? { delay: 0.2 } : { duration: 0 }}
-            >
-              Mugshots (Click one)
-            </motion.h2>
+            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700">
+              <motion.h2 
+                className="text-xl font-semibold text-gray-100 flex items-center gap-2"
+                initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={animationsEnabled ? { delay: 0.2 } : { duration: 0 }}
+              >
+                <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-red-300"></div>
+                Suspects
+              </motion.h2>
+              <p className="text-sm text-gray-400 mt-1">Click a suspect to select them</p>
+            </div>
             <motion.div 
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4"
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 0.4, duration: 0.8 } : { duration: 0 }}
@@ -974,32 +1018,37 @@ export default function MugshotMatchingGame() {
             </motion.div>
           </motion.div>
 
-          {/* Crime Descriptions Section */}
+          {/* Right Column - Crime Descriptions Section */}
           <motion.div
-            initial={animationsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={animationsEnabled ? { duration: 0.6, delay: 0.6 } : { duration: 0 }}
+            initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={animationsEnabled ? { duration: 0.6, delay: 0.3 } : { duration: 0 }}
+            className="space-y-4"
           >
-            <motion.h2 
-              className="text-xl font-semibold text-gray-100 mb-3"
-              initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={animationsEnabled ? { delay: 0.8 } : { duration: 0 }}
-            >
-              Crime Descriptions (Click one)
-            </motion.h2>
+            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700 lg:pl-4">
+              <motion.h2 
+                className="text-xl font-semibold text-gray-100 flex items-center gap-2"
+                initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={animationsEnabled ? { delay: 0.5 } : { duration: 0 }}
+              >
+                <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-blue-300"></div>
+                Case Files
+              </motion.h2>
+              <p className="text-sm text-gray-400 mt-1">Click a crime description to match</p>
+            </div>
             <motion.div 
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+              className="space-y-3"
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
-              transition={animationsEnabled ? { delay: 1.0, duration: 0.8 } : { duration: 0 }}
+              transition={animationsEnabled ? { delay: 0.7, duration: 0.8 } : { duration: 0 }}
             >
               {shuffledCrimeDescriptions.map((description, index) => (
                 <motion.div 
                   key={description.id}
                   initial={animationsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={animationsEnabled ? { delay: 1.2 + (index * 0.1), duration: 0.5 } : { duration: 0 }}
+                  transition={animationsEnabled ? { delay: 0.9 + (index * 0.1), duration: 0.5 } : { duration: 0 }}
                 >
                   <SelectableDescription description={description} />
                 </motion.div>
@@ -1111,6 +1160,84 @@ export default function MugshotMatchingGame() {
                 </div>
               )}
             </div>
+
+            {/* Detailed Results Section */}
+            {results.detailedResults && results.detailedResults.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-xl font-bold text-gray-100 mb-6 text-center">Detailed Results</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {results.detailedResults.map((result, index) => (
+                    <div
+                      key={result.mugshotId}
+                      className={cn(
+                        "p-6 rounded-xl border-2 shadow-lg transition-all duration-300",
+                        result.isCorrect 
+                          ? "border-green-500 bg-green-900/20" 
+                          : "border-red-500 bg-red-900/20"
+                      )}
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Mugshot Image */}
+                        <div className="relative">
+                          <img
+                            src={result.mugshotImage}
+                            alt={result.mugshotName}
+                            className="w-20 h-20 rounded-lg object-cover border-2 border-gray-600"
+                          />
+                          <div className={cn(
+                            "absolute -top-2 -right-2 p-1 rounded-full",
+                            result.isCorrect ? "bg-green-500" : "bg-red-500"
+                          )}>
+                            {result.isCorrect ? (
+                              <CheckCircle2 className="h-5 w-5 text-white" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-white" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Result Details */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-100 mb-3">{result.mugshotName}</h4>
+                          
+                          {result.isCorrect ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                                <span className="font-medium text-green-400">Correct!</span>
+                              </div>
+                              <div className="p-3 bg-green-900/30 rounded-lg border border-green-500/30">
+                                <p className="text-sm text-gray-300 mb-1">Crime:</p>
+                                <p className="text-green-300 font-medium">{result.actualCrime}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <XCircle className="h-4 w-4 text-red-400" />
+                                <span className="font-medium text-red-400">Incorrect</span>
+                              </div>
+                              
+                              {/* User's Guess */}
+                              <div className="p-3 bg-red-900/30 rounded-lg border border-red-500/30">
+                                <p className="text-xs text-gray-400 mb-1">Your Guess:</p>
+                                <p className="text-red-300 text-sm">{result.userGuessCrime}</p>
+                              </div>
+                              
+                              {/* Actual Crime */}
+                              <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-600">
+                                <p className="text-xs text-gray-400 mb-1">Actual Crime:</p>
+                                <p className="text-gray-200 text-sm font-medium">{result.actualCrime}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
