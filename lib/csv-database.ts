@@ -193,6 +193,7 @@ const RESTRICTED_CRIME_WORDS = [
   'robbery',
   'burglary',
   'assault',
+  'posession',
   'battery',
   'carjacking',
   'cocaine',
