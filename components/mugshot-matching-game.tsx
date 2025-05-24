@@ -909,7 +909,7 @@ export default function MugshotMatchingGame() {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-6">
-      <Card className="w-full max-w-6xl p-8 shadow-lg bg-gray-900/50 border border-gray-700">
+      <Card className="w-full max-w-7xl p-8 shadow-lg bg-gray-900/50 border border-gray-700">
         {/* Score Display */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-6">

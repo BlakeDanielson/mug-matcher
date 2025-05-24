@@ -68,7 +68,7 @@ export function GameLayoutWithAds({
         )}
 
         {/* Game Content */}
-        <div className="flex-1 flex justify-center max-w-6xl">
+        <div className="flex-1 flex justify-center max-w-8xl">
           {children}
         </div>
 
