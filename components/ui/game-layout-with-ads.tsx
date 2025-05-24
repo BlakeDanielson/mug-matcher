@@ -24,7 +24,7 @@ export function GameLayoutWithAds({
     <div className={cn("min-h-screen flex flex-col items-center justify-center p-4 md:p-8", className)}>
       {/* Top Banner Ad - Desktop and Mobile */}
       {showTopBanner && (
-        <div className="w-full max-w-4xl mb-4">
+        <div className="w-full mb-4">
           <div className="flex justify-center">
             {isMobile ? (
               <AdBanner
@@ -46,7 +46,7 @@ export function GameLayoutWithAds({
       )}
 
       {/* Main Content with Sidebar Layout */}
-      <div className="w-full max-w-7xl flex gap-6 justify-center">
+      <div className="w-full flex gap-6 justify-center">
         {/* Left Sidebar Ad - Desktop Only */}
         {showSidebar && !isMobile && (
           <div className="hidden lg:flex flex-col gap-4 w-[300px] flex-shrink-0">
@@ -68,7 +68,7 @@ export function GameLayoutWithAds({
         )}
 
         {/* Game Content */}
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 flex justify-center max-w-4xl">
           {children}
         </div>
 
