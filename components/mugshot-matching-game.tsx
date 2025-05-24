@@ -136,7 +136,7 @@ function GameStats({
   const progressValue = totalMatches > 0 ? (totalMatches / 6) * 100 : 0
   
   return (
-    <div className="flex flex-wrap justify-center gap-3 mb-6">
+    <div className="flex flex-wrap justify-center gap-3 mb-4">
       <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 px-3 py-1">
         <Timer className="h-3 w-3 mr-1" />
         {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
@@ -909,9 +909,9 @@ export default function MugshotMatchingGame() {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-6">
-      <Card className="w-full max-w-7xl p-8 shadow-lg bg-gray-900/50 border border-gray-700">
+      <Card className="w-full max-w-7xl p-6 shadow-lg bg-gray-900/50 border border-gray-700">
         {/* Score Display */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-6">
             <div className="bg-blue-900/50 px-4 py-2 rounded-lg border border-blue-700">
               <div className="flex items-center gap-2">
@@ -937,8 +937,8 @@ export default function MugshotMatchingGame() {
           />
         )}
 
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-100 mb-2">
+        <div className="mb-4 text-center">
+          <h1 className="text-3xl font-bold text-gray-100 mb-1">
             Criminal Lineup Challenge
           </h1>
           <p className="text-lg text-gray-300">
@@ -947,7 +947,7 @@ export default function MugshotMatchingGame() {
         </div>
 
         {/* Game board */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Mugshots Section */}
           <motion.div
             initial={animationsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
@@ -955,7 +955,7 @@ export default function MugshotMatchingGame() {
             transition={animationsEnabled ? { duration: 0.6 } : { duration: 0 }}
           >
             <motion.h2 
-              className="text-xl font-semibold text-gray-100 mb-4"
+              className="text-xl font-semibold text-gray-100 mb-3"
               initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
               animate={{ opacity: 1, x: 0 }}
               transition={animationsEnabled ? { delay: 0.2 } : { duration: 0 }}
@@ -963,7 +963,7 @@ export default function MugshotMatchingGame() {
               Mugshots (Click one)
             </motion.h2>
             <motion.div 
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4"
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 0.4, duration: 0.8 } : { duration: 0 }}
@@ -981,7 +981,7 @@ export default function MugshotMatchingGame() {
             transition={animationsEnabled ? { duration: 0.6, delay: 0.6 } : { duration: 0 }}
           >
             <motion.h2 
-              className="text-xl font-semibold text-gray-100 mb-4"
+              className="text-xl font-semibold text-gray-100 mb-3"
               initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
               animate={{ opacity: 1, x: 0 }}
               transition={animationsEnabled ? { delay: 0.8 } : { duration: 0 }}
@@ -989,7 +989,7 @@ export default function MugshotMatchingGame() {
               Crime Descriptions (Click one)
             </motion.h2>
             <motion.div 
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 1.0, duration: 0.8 } : { duration: 0 }}
@@ -1115,7 +1115,7 @@ export default function MugshotMatchingGame() {
         )}
 
         {/* Enhanced Action buttons */}
-        <div className="mt-10 flex justify-center gap-4">
+        <div className="mt-8 flex justify-center gap-4">
           {!results?.submitted ? (
             <Button
               onClick={handleSubmit}
