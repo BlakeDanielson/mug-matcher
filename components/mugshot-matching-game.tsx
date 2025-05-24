@@ -12,6 +12,8 @@ import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy, 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useToast } from "@/hooks/use-toast"
+import { AdBanner } from "@/components/ui/ad-banner"
+import { InterRoundAdModal } from "@/components/ui/inter-round-ad-modal"
 
 import {
   Dialog,
@@ -281,6 +283,7 @@ export default function MugshotMatchingGame() {
   const [isCrimeModalOpen, setIsCrimeModalOpen] = useState(false)
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
   const [animationsEnabled, setAnimationsEnabled] = useState(false)
+  const [isInterRoundModalOpen, setIsInterRoundModalOpen] = useState(false)
 
   // Points system state
   const [currentPoints, setCurrentPoints] = useState<number>(0)
@@ -986,7 +989,7 @@ export default function MugshotMatchingGame() {
               Crime Descriptions (Click one)
             </motion.h2>
             <motion.div 
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"
+              className="grid grid-cols-2 md:grid-cols-3 gap-5"
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 1.0, duration: 0.8 } : { duration: 0 }}
@@ -1046,6 +1049,16 @@ export default function MugshotMatchingGame() {
               )}>
                 {results.percentage >= 80 ? "Excellent Work!" : results.percentage >= 60 ? "Good Job!" : "Keep Practicing!"}
               </p>
+            </div>
+
+            {/* Results Ad Banner */}
+            <div className="mb-6 flex justify-center">
+              <AdBanner
+                data-ad-slot={process.env.NEXT_PUBLIC_AD_SLOT_RESULTS || "1234567892"}
+                variant={isMobile ? "mobile" : "banner"}
+                data-ad-format="auto"
+                className="w-full max-w-[728px]"
+              />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
@@ -1129,7 +1142,7 @@ export default function MugshotMatchingGame() {
           ) : (
             <div className="flex gap-4">
               <Button
-                onClick={() => resetGame()}
+                onClick={() => setIsInterRoundModalOpen(true)}
                 className="px-12 py-6 bg-gray-600 hover:bg-gray-700 text-white shadow-lg transition-all duration-200 hover:scale-105 transform text-lg font-semibold"
                 size="lg"
               >
@@ -1156,6 +1169,15 @@ export default function MugshotMatchingGame() {
           )}
         </div>
       </Card>
+
+      {/* Inter-round Ad Modal */}
+      <InterRoundAdModal
+        isOpen={isInterRoundModalOpen}
+        onClose={() => setIsInterRoundModalOpen(false)}
+        onContinue={() => resetGame()}
+        title="Ready for Another Challenge?"
+        description="Test your detective skills with a new set of mugshots and crimes!"
+      />
     </div>
   )
 }

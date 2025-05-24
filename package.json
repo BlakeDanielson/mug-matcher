@@ -14,7 +14,8 @@
     "validate-data": "node scripts/validate-data.js",
     "update-render-config": "node scripts/update-render-config.js",
     "setup-data-file": "node scripts/setup-data-file.js",
-    "test-data-access": "node scripts/test-data-access.js"
+    "test-data-access": "node scripts/test-data-access.js",
+    "setup-adsense": "node scripts/setup-adsense.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
