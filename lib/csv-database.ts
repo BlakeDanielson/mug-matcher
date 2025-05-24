@@ -178,85 +178,58 @@ function normalizeCrime(crime: string): string {
 }
 
 /**
- * Check if two crimes are too similar to include both
- * Returns true if they should be considered duplicates
+ * Static list of restricted words - only one crime containing each word can appear per batch
+ * Add or remove words from this list to control crime filtering
+ */
+const RESTRICTED_CRIME_WORDS = [
+  'murder',
+  'homicide', 
+  'manslaughter',
+  'killing',
+  'sexual',
+  'rape',
+  'molestation',
+  'robbery',
+  'burglary',
+  'assault',
+  'battery',
+  'carjacking',
+  'cocaine',
+  'marijuana',
+  'heroin',
+  'methamphetamine',
+  'fentanyl',
+  'weapon',
+  'gun',
+  'firearm',
+  'trafficking',
+  'theft',
+  'stealing',
+  'larceny'
+];
+
+/**
+ * Check if two crimes share any restricted words
+ * Returns true if they should be considered duplicates (share a restricted word)
  */
 function areCrimesSimilar(crime1: string, crime2: string): boolean {
   const normalized1 = normalizeCrime(crime1);
   const normalized2 = normalizeCrime(crime2);
   
+  // Exact match check
   if (normalized1 === normalized2) {
     return true;
   }
   
-    // Murder charges (any degree or type)  const murderKeywords = ['murder', 'homicide', 'killing', 'manslaughter'];  const hasCrime1Murder = murderKeywords.some(keyword => normalized1.includes(keyword));  const hasCrime2Murder = murderKeywords.some(keyword => normalized2.includes(keyword));  if (hasCrime1Murder && hasCrime2Murder) {    return true;  }
-  
-      // Sexual crimes  const sexualKeywords = ['sexual battery', 'sexual assault', 'sexual molestation', 'rape', 'sexual abuse', 'sexual predator', 'sex predator'];  const hasCrime1Sexual = sexualKeywords.some(keyword => normalized1.includes(keyword));  const hasCrime2Sexual = sexualKeywords.some(keyword => normalized2.includes(keyword));  if (hasCrime1Sexual && hasCrime2Sexual) {    return true;  }
-  
-  // Robbery charges
-  const robberyKeywords = ['robbery', 'robbing'];
-  const hasCrime1Robbery = robberyKeywords.some(keyword => normalized1.includes(keyword));
-  const hasCrime2Robbery = robberyKeywords.some(keyword => normalized2.includes(keyword));
-  if (hasCrime1Robbery && hasCrime2Robbery) {
-    return true;
-  }
-  
-  // Burglary charges  
-  const burglaryKeywords = ['burglary', 'breaking and entering'];
-  const hasCrime1Burglary = burglaryKeywords.some(keyword => normalized1.includes(keyword));
-  const hasCrime2Burglary = burglaryKeywords.some(keyword => normalized2.includes(keyword));
-  if (hasCrime1Burglary && hasCrime2Burglary) {
-    return true;
-  }
-  
-  // Assault/Battery charges
-  const assaultKeywords = ['assault', 'battery', 'aggravated battery'];
-  const hasCrime1Assault = assaultKeywords.some(keyword => normalized1.includes(keyword));
-  const hasCrime2Assault = assaultKeywords.some(keyword => normalized2.includes(keyword));
-  if (hasCrime1Assault && hasCrime2Assault) {
-    return true;
-  }
-  
-  // Carjacking charges
-  const carjackingKeywords = ['carjacking', 'carjack'];
-  const hasCrime1Carjacking = carjackingKeywords.some(keyword => normalized1.includes(keyword));
-  const hasCrime2Carjacking = carjackingKeywords.some(keyword => normalized2.includes(keyword));
-  if (hasCrime1Carjacking && hasCrime2Carjacking) {
-    return true;
-  }
-  
-  // Drug crimes by type
-  const drugKeywords = ['cocaine', 'marijuana', 'heroin', 'methamphetamine', 'fentanyl', 'mdma', 'cannabis', 'amphetamine'];
-  const crime1Drug = drugKeywords.find(drug => normalized1.includes(drug));
-  const crime2Drug = drugKeywords.find(drug => normalized2.includes(drug));
-  
-  if (crime1Drug && crime2Drug && crime1Drug === crime2Drug) {
-    return true;
-  }
-  
-  // Weapon-related crimes
-  const weaponKeywords = ['weapon', 'gun', 'firearm', 'concealed', 'ammunition'];
-  const hasCrime1Weapon = weaponKeywords.some(weapon => normalized1.includes(weapon));
-  const hasCrime2Weapon = weaponKeywords.some(weapon => normalized2.includes(weapon));
-  
-  if (hasCrime1Weapon && hasCrime2Weapon) {
-    return true;
-  }
-  
-  // Trafficking/delivery crimes
-  const traffickingKeywords = ['trafficking', 'delivery', 'distribution', 'sale'];
-  const hasCrime1Trafficking = traffickingKeywords.some(keyword => normalized1.includes(keyword));
-  const hasCrime2Trafficking = traffickingKeywords.some(keyword => normalized2.includes(keyword));
-  if (hasCrime1Trafficking && hasCrime2Trafficking) {
-    return true;
-  }
-  
-  // Theft-related crimes
-  const theftKeywords = ['theft', 'stealing', 'stolen property', 'larceny'];
-  const hasCrime1Theft = theftKeywords.some(keyword => normalized1.includes(keyword));
-  const hasCrime2Theft = theftKeywords.some(keyword => normalized2.includes(keyword));
-  if (hasCrime1Theft && hasCrime2Theft) {
-    return true;
+  // Check if both crimes contain any of the same restricted words
+  for (const restrictedWord of RESTRICTED_CRIME_WORDS) {
+    const crime1HasWord = normalized1.includes(restrictedWord);
+    const crime2HasWord = normalized2.includes(restrictedWord);
+    
+    if (crime1HasWord && crime2HasWord) {
+      console.log(`[CSV-DB] Crimes share restricted word "${restrictedWord}": "${crime1}" vs "${crime2}"`);
+      return true;
+    }
   }
   
   return false;
