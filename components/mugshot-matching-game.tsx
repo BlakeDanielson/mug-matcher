@@ -58,8 +58,8 @@ function GameSkeleton() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 min-h-[600px]">
           {/* Left Column - Suspects Skeleton */}
-          <div className="space-y-4">
-            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700">
+          <div className="space-y-6">
+            <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
               <Skeleton className="h-6 w-32 mb-2 bg-gray-200" />
               <Skeleton className="h-4 w-48 bg-gray-200" />
             </div>
@@ -72,9 +72,9 @@ function GameSkeleton() {
             </div>
           </div>
 
-          {/* Right Column - Case Files Skeleton */}
-          <div className="space-y-4">
-            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700">
+          {/* Right Column - Crimes Skeleton */}
+          <div className="space-y-6">
+            <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
               <Skeleton className="h-6 w-32 mb-2 bg-gray-200" />
               <Skeleton className="h-4 w-56 bg-gray-200" />
             </div>
@@ -992,19 +992,19 @@ export default function MugshotMatchingGame() {
             initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
             animate={{ opacity: 1, x: 0 }}
             transition={animationsEnabled ? { duration: 0.6 } : { duration: 0 }}
-            className="space-y-4 lg:border-r lg:border-gray-700 lg:pr-4"
+            className="space-y-6"
           >
-            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700">
+            <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
               <motion.h2 
-                className="text-xl font-semibold text-gray-100 flex items-center gap-2"
+                className="text-xl font-bold text-gray-100 flex items-center gap-3 mb-2"
                 initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={animationsEnabled ? { delay: 0.2 } : { duration: 0 }}
               >
-                <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-red-300"></div>
+                <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
                 Suspects
               </motion.h2>
-              <p className="text-sm text-gray-400 mt-1">Click a suspect to select them</p>
+              <p className="text-sm text-gray-400">Click a suspect to select them</p>
             </div>
             <motion.div 
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4"
@@ -1023,19 +1023,19 @@ export default function MugshotMatchingGame() {
             initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
             animate={{ opacity: 1, x: 0 }}
             transition={animationsEnabled ? { duration: 0.6, delay: 0.3 } : { duration: 0 }}
-            className="space-y-4"
+            className="space-y-6"
           >
-            <div className="sticky top-0 z-10 bg-gray-900/95 pb-3 border-b border-gray-700 lg:pl-4">
+            <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
               <motion.h2 
-                className="text-xl font-semibold text-gray-100 flex items-center gap-2"
+                className="text-xl font-bold text-gray-100 flex items-center gap-3 mb-2"
                 initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={animationsEnabled ? { delay: 0.5 } : { duration: 0 }}
               >
-                <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-blue-300"></div>
-                Case Files
+                <div className="w-4 h-4 bg-blue-500 rounded-full shadow-lg"></div>
+                Crimes
               </motion.h2>
-              <p className="text-sm text-gray-400 mt-1">Click a crime description to match</p>
+              <p className="text-sm text-gray-400">Click a crime description to match</p>
             </div>
             <motion.div 
               className="space-y-3"
