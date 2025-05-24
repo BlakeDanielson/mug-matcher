@@ -995,16 +995,16 @@ export default function MugshotMatchingGame() {
             className="space-y-6"
           >
             <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
-              <motion.h2 
-                className="text-xl font-bold text-gray-100 flex items-center gap-3 mb-2"
+              <motion.div 
+                className="flex items-center gap-3"
                 initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={animationsEnabled ? { delay: 0.2 } : { duration: 0 }}
               >
                 <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
-                Suspects
-              </motion.h2>
-              <p className="text-sm text-gray-400">Click a suspect to select them</p>
+                <h2 className="text-xl font-bold text-gray-100">Mugshots</h2>
+                <span className="text-sm text-gray-400 ml-2">Click a mugshot to select them</span>
+              </motion.div>
             </div>
             <motion.div 
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4"
@@ -1026,16 +1026,16 @@ export default function MugshotMatchingGame() {
             className="space-y-6"
           >
             <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
-              <motion.h2 
-                className="text-xl font-bold text-gray-100 flex items-center gap-3 mb-2"
+              <motion.div 
+                className="flex items-center gap-3"
                 initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={animationsEnabled ? { delay: 0.5 } : { duration: 0 }}
               >
                 <div className="w-4 h-4 bg-blue-500 rounded-full shadow-lg"></div>
-                Crimes
-              </motion.h2>
-              <p className="text-sm text-gray-400">Click a crime description to match</p>
+                <h2 className="text-xl font-bold text-gray-100">Crimes</h2>
+                <span className="text-sm text-gray-400 ml-2">Click a crime description to match</span>
+              </motion.div>
             </div>
             <motion.div 
               className="space-y-3"
