@@ -147,6 +147,7 @@ export function ParticleExplosion({
         cancelAnimationFrame(animationRef.current)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, x, y])
 
   if (!trigger) return null

@@ -81,17 +81,7 @@
   animation: glow 2s infinite;
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-.slide-in-up {
-  animation: slideInUp 0.6s ease-out forwards;
-}
-
-.scale-in {
-  animation: scaleIn 0.4s ease-out forwards;
-}
+.fade-in {  /* Animation removed - only triggers when manually applied */}.slide-in-up {  /* Animation removed - only triggers when manually applied */}.scale-in {  /* Animation removed - only triggers when manually applied */}
 
 .card-hover-effect {
   transition: all 0.3s ease;
@@ -156,36 +146,10 @@
   overflow: hidden;
 }
 
-.shimmer-effect::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  animation: shimmer 2s infinite;
-}
-
-.pulse-glow {  animation: pulse-glow 2s ease-in-out infinite;}.pulse-slow {  animation: pulse-slow 2s ease-in-out infinite;}
-
-.bounce-gentle {
-  animation: bounce-gentle 2s ease-in-out infinite;
-}
-
-.rotate-gentle {
-  animation: rotate-gentle 20s linear infinite;
-}
+.shimmer-effect::before {  content: '';  position: absolute;  top: 0;  left: -100%;  width: 100%;  height: 100%;  background: linear-gradient(    90deg,    transparent,    rgba(255, 255, 255, 0.1),    transparent  );  /* Animation removed - only triggers when manually applied */}.pulse-glow {  /* Animation removed - only triggers when manually applied */}.pulse-slow {  /* Animation removed - only triggers when manually applied */}.bounce-gentle {  /* Animation removed - only triggers when manually applied */}.rotate-gentle {  /* Animation removed - only triggers when manually applied */}
 
 /* Staggered animations */
-.stagger-animation {
-  animation: slideInUp 0.6s ease-out forwards;
-}
+.stagger-animation {  /* Animation removed - only triggers when manually applied */}
 
 .stagger-1 { animation-delay: 0.1s; }
 .stagger-2 { animation-delay: 0.2s; }
@@ -213,16 +177,7 @@
 
 
 /* Progress indicators */
-.progress-shimmer {
-  background: linear-gradient(
-    90deg,
-    #374151 25%,
-    #4b5563 50%,
-    #374151 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
+.progress-shimmer {  background: linear-gradient(    90deg,    #374151 25%,    #4b5563 50%,    #374151 75%  );  background-size: 200% 100%;  /* Animation removed - only triggers when manually applied */}
 
 /* Points System Styles */
 
@@ -357,16 +312,10 @@
   }
 }
 
-.skeleton-loading {
-  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
-  background-size: 200px 100%;
-  animation: skeleton-loading 1.5s infinite;
-}
+.skeleton-loading {  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);  background-size: 200px 100%;  /* Animation removed - only triggers when manually applied */}
 
 /* Game container animations */
-.game-container {
-  animation: slideInUp 0.8s ease-out;
-}
+.game-container {  /* Animation removed - only triggers when manually applied */}
 
 /* Interactive feedback */
 .interactive-feedback {

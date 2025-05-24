@@ -7,8 +7,7 @@ interface CsvInmate {
   InmateID: string;
   Name: string;
   MugshotURL: string;
-  Best_Crime: string; // Changed from AI_Description_Explanation
-  // Other fields are available but not needed for our implementation
+  Best_Crime: string;
 }
 
 // Define the output inmate data structure (matching the existing API)
@@ -25,100 +24,47 @@ let inmateCache: CsvInmate[] | null = null;
 /**
  * Get the path to the CSV file
  * Handles both development and production (Render) environments
- */
-/**
- * Get the path to the CSV file
- * Handles both development and production (Render) environments
  * @returns The resolved path to the CSV file
  * @throws Error if the path cannot be resolved
  */
 function getCsvFilePath(): string {
-  const envPath = process.env.MUGSHOTS_CSV_PATH;
-  const isRenderEnvironment = process.env.RENDER === 'true';
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Log environment information for diagnostics
-  console.log(`[CSV-DB] Environment: ${isRenderEnvironment ? 'Render' : isProduction ? 'Production' : 'Development'}`);
+  // Get the CSV path from environment variable with fallback
+  const envPath = process.env.MUGSHOTS_CSV_PATH || 'data/sorted_mugshots.csv';
+  
+  console.log(`[CSV-DB] Environment: ${isProduction ? 'Production' : 'Development'}`);
   console.log(`[CSV-DB] Current working directory: ${process.cwd()}`);
-  console.log(`[CSV-DB] MUGSHOTS_CSV_PATH: ${envPath || 'not set'}`);
+  console.log(`[CSV-DB] MUGSHOTS_CSV_PATH: ${envPath}`);
   
-  if (!envPath) {
-    throw new Error('MUGSHOTS_CSV_PATH environment variable is not set. Please check your .env file.');
-  }
-  
-  // If the path is absolute (like in Render production: /data/sorted_mugshots.csv), use it directly
-  if (path.isAbsolute(envPath)) {
-    console.log(`[CSV-DB] Using absolute CSV path: ${envPath}`);
-    
-    // In production/Render, verify the /data directory exists if that's where we're looking
-    if (isRenderEnvironment && envPath.startsWith('/data')) {
-      try {
-        const dataDir = '/data';
-        const dataExists = fs.existsSync(dataDir);
-        const dataStats = dataExists ? fs.statSync(dataDir) : null;
-        console.log(`[CSV-DB] /data directory exists: ${dataExists}`);
-        if (dataStats) {
-          console.log(`[CSV-DB] /data directory permissions: ${dataStats.mode.toString(8)}`);
-          console.log(`[CSV-DB] /data directory is directory: ${dataStats.isDirectory()}`);
-          
-          // List files in /data directory for diagnostics
-          try {
-            const files = fs.readdirSync(dataDir);
-            console.log(`[CSV-DB] Files in /data directory: ${files.join(', ') || 'none'}`);
-          } catch (err) {
-            console.error(`[CSV-DB] Error reading /data directory: ${err instanceof Error ? err.message : String(err)}`);
-          }
-        }
-      } catch (err) {
-        console.error(`[CSV-DB] Error checking /data directory: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-    
-    return envPath;
-  }
-  
-  // In development, resolve relative paths based on the environment
+  // Check if we're in the mug-matcher directory
   const isInMugMatcherDir = process.cwd().endsWith('mug-matcher');
   console.log(`[CSV-DB] Is in mug-matcher directory: ${isInMugMatcherDir}`);
   
-  let resolvedPath: string;
+  let csvFilePath: string;
   
-  // If we're already in the mug-matcher directory, don't add it to the path
-  if (isInMugMatcherDir) {
-    resolvedPath = path.resolve(process.cwd(), envPath);
-    console.log(`[CSV-DB] Using relative CSV path (from mug-matcher dir): ${resolvedPath}`);
+  if (path.isAbsolute(envPath)) {
+    // Use absolute path as-is
+    csvFilePath = envPath;
+    console.log(`[CSV-DB] Using absolute CSV path: ${csvFilePath}`);
+  } else if (isInMugMatcherDir) {
+    // We're in the mug-matcher directory, use relative path from current directory
+    csvFilePath = path.resolve(process.cwd(), envPath);
+    console.log(`[CSV-DB] Using relative CSV path (from mug-matcher dir): ${csvFilePath}`);
   } else {
-    // If we're in the parent directory, add mug-matcher to the path
-    resolvedPath = path.resolve(process.cwd(), 'mug-matcher', envPath);
-    console.log(`[CSV-DB] Using relative CSV path (from parent dir): ${resolvedPath}`);
+    // We're not in mug-matcher, assume we need to go up to find it
+    csvFilePath = path.resolve(process.cwd(), '..', envPath);
+    console.log(`[CSV-DB] Using relative CSV path (from parent dir): ${csvFilePath}`);
   }
   
-  // Log the directory structure around the resolved path for diagnostics
-  try {
-    const dirPath = path.dirname(resolvedPath);
-    if (fs.existsSync(dirPath)) {
-      console.log(`[CSV-DB] Parent directory exists: ${dirPath}`);
-      const files = fs.readdirSync(dirPath);
-      console.log(`[CSV-DB] Files in parent directory: ${files.join(', ') || 'none'}`);
-    } else {
-      console.log(`[CSV-DB] Parent directory does not exist: ${dirPath}`);
-    }
-  } catch (err) {
-    console.error(`[CSV-DB] Error checking parent directory: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  
-  return resolvedPath;
+  return csvFilePath;
 }
 
 /**
- * Load and parse the CSV file
- * This is only done once and then cached
- */
-/**
- * Load and parse the CSV file
- * This is only done once and then cached
- * @returns Promise resolving to the parsed CSV data
- * @throws Error if the CSV file cannot be loaded or parsed
+ * Load and parse the CSV data from the file system
+ * This function handles caching and provides detailed error messages
+ * @returns Array of CSV inmate records
+ * @throws Error with detailed context if loading fails
  */
 async function loadCsvData(): Promise<CsvInmate[]> {
   // Return cached data if available
@@ -128,39 +74,16 @@ async function loadCsvData(): Promise<CsvInmate[]> {
   }
 
   const csvFilePath = getCsvFilePath();
-  const isRenderEnvironment = process.env.RENDER === 'true';
-  const isProduction = process.env.NODE_ENV === 'production';
-  
   console.log(`[CSV-DB] Loading CSV data from: ${csvFilePath}`);
-  console.log(`[CSV-DB] Process environment: ${isRenderEnvironment ? 'Render' : isProduction ? 'Production' : 'Development'}`);
+  console.log(`[CSV-DB] Process environment: ${process.env.NODE_ENV || 'development'}`);
 
   try {
-    // Check if the file exists and log file stats
+    // Check if the file exists
     if (!fs.existsSync(csvFilePath)) {
       console.error(`[CSV-DB] CSV file not found at path: ${csvFilePath}`);
       
-      // Check for file system permissions issues
-      try {
-        const dirPath = path.dirname(csvFilePath);
-        if (fs.existsSync(dirPath)) {
-          const dirStats = fs.statSync(dirPath);
-          console.log(`[CSV-DB] Parent directory exists: ${dirPath}`);
-          console.log(`[CSV-DB] Parent directory permissions: ${dirStats.mode.toString(8)}`);
-          console.log(`[CSV-DB] Parent directory is directory: ${dirStats.isDirectory()}`);
-          
-          // List files in the directory
-          try {
-            const files = fs.readdirSync(dirPath);
-            console.log(`[CSV-DB] Files in parent directory: ${files.join(', ') || 'none'}`);
-          } catch (readErr) {
-            console.error(`[CSV-DB] Error reading parent directory: ${readErr instanceof Error ? readErr.message : String(readErr)}`);
-          }
-        } else {
-          console.error(`[CSV-DB] Parent directory does not exist: ${dirPath}`);
-        }
-      } catch (statErr) {
-        console.error(`[CSV-DB] Error checking parent directory: ${statErr instanceof Error ? statErr.message : String(statErr)}`);
-      }
+      const isRenderEnvironment = process.env.RENDER === 'true';
+      const isProduction = process.env.NODE_ENV === 'production';
       
       // Provide more helpful error message with potential solutions
       let errorMessage = '';
@@ -176,31 +99,13 @@ async function loadCsvData(): Promise<CsvInmate[]> {
       throw new Error(errorMessage);
     }
 
-    // Log file stats for diagnostics
-    try {
-      const fileStats = fs.statSync(csvFilePath);
-      console.log(`[CSV-DB] CSV file size: ${fileStats.size} bytes`);
-      console.log(`[CSV-DB] CSV file permissions: ${fileStats.mode.toString(8)}`);
-      console.log(`[CSV-DB] CSV file last modified: ${fileStats.mtime}`);
-    } catch (statErr) {
-      console.error(`[CSV-DB] Error getting file stats: ${statErr instanceof Error ? statErr.message : String(statErr)}`);
-    }
-
     // Read the CSV file
     console.log(`[CSV-DB] Reading CSV file content...`);
     const fileContent = fs.readFileSync(csvFilePath, 'utf8');
     
     if (!fileContent || fileContent.trim().length === 0) {
       console.error(`[CSV-DB] CSV file is empty: ${csvFilePath}`);
-      
-      // Provide more helpful error message with potential solutions
-      const errorMessage = isRenderEnvironment
-        ? `CSV file is empty at ${csvFilePath}. This is a Render deployment issue. The file may not have been properly transferred using the wormhole CLI tool. Verify that the source data file exists and has content, and that the wormhole transfer completed successfully.`
-        : isProduction
-        ? `CSV file is empty at ${csvFilePath}. Make sure the file contains valid data. The sorted_mugshots.csv file should be transferred manually using the wormhole CLI tool after deployment. Verify that the source data file exists and has content, and that the wormhole transfer completed successfully.`
-        : `CSV file is empty at ${csvFilePath}. Make sure the file contains valid data. You can run 'npm run copy-data' to copy the file to the data directory or use the wormhole CLI tool to transfer it. Verify that the source data file exists and has content.`;
-      
-      throw new Error(errorMessage);
+      throw new Error(`CSV file is empty at ${csvFilePath}. Make sure the file contains valid data.`);
     }
 
     // Log a sample of the file content for diagnostics (first 100 chars)
@@ -219,13 +124,6 @@ async function loadCsvData(): Promise<CsvInmate[]> {
     
     // Log parsing results
     console.log(`[CSV-DB] CSV parsing complete. Rows found: ${parseResult.data?.length || 0}`);
-    console.log(`[CSV-DB] CSV parsing meta: ${JSON.stringify({
-      delimiter: parseResult.meta.delimiter,
-      linebreak: parseResult.meta.linebreak,
-      aborted: parseResult.meta.aborted,
-      truncated: parseResult.meta.truncated,
-      fields: parseResult.meta.fields?.join(', ')
-    })}`);
     
     if (parseResult.errors && parseResult.errors.length > 0) {
       console.warn(`[CSV-DB] CSV parsing had ${parseResult.errors.length} errors:`,
@@ -243,7 +141,7 @@ async function loadCsvData(): Promise<CsvInmate[]> {
                              'InmateID' in firstRecord &&
                               'Name' in firstRecord &&
                               'MugshotURL' in firstRecord &&
-                              'Best_Crime' in firstRecord; // Changed from AI_Description_Explanation
+                              'Best_Crime' in firstRecord;
     
     if (!hasRequiredFields) {
       console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, Best_Crime. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
@@ -254,24 +152,13 @@ async function loadCsvData(): Promise<CsvInmate[]> {
     inmateCache = parseResult.data;
     console.log(`[CSV-DB] Successfully loaded ${inmateCache.length} inmates from CSV at ${csvFilePath}`);
     
-    // Log a sample record for diagnostics (without sensitive data)
-    if (inmateCache.length > 0) {
-      const sampleRecord = { ...inmateCache[0] };
-      console.log(`[CSV-DB] Sample record: ${JSON.stringify({
-        InmateID: sampleRecord.InmateID,
-        HasName: !!sampleRecord.Name,
-        HasMugshotURL: !!sampleRecord.MugshotURL,
-        HasBestCrime: !!sampleRecord.Best_Crime // Changed from HasAIDescription and AI_Description_Explanation
-      })}`);
-    }
-    
-    return inmateCache as CsvInmate[];
+    return inmateCache;
   } catch (error) {
     console.error(`[CSV-DB] Error loading CSV data:`, error);
     
     // Create a more detailed error message
     const errorDetails = error instanceof Error
-      ? `${error.name}: ${error.message}${error.stack ? `\nStack: ${error.stack}` : ''}`
+      ? `${error.name}: ${error.message}`
       : String(error);
     
     throw new Error(`Failed to load inmate data from CSV: ${errorDetails}`);
@@ -279,18 +166,110 @@ async function loadCsvData(): Promise<CsvInmate[]> {
 }
 
 /**
- * Get a list of inmates with their primary charge
- * @param limit Maximum number of inmates to return
- * @returns Array of inmate objects
+ * Normalize a crime description for comparison
+ * Removes common words and normalizes the text to help identify similar crimes
  */
+function normalizeCrime(crime: string): string {
+  return crime
+    .toLowerCase()
+    .replace(/\s+(possession|with\s+intent\s+to\s+distribute|trafficking|delivery|of|and|&)\s+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /**
- * Get a list of inmates with their primary charge
+ * Check if two crimes are too similar to include both
+ * Returns true if they should be considered duplicates
+ */
+function areCrimesSimilar(crime1: string, crime2: string): boolean {
+  const normalized1 = normalizeCrime(crime1);
+  const normalized2 = normalizeCrime(crime2);
+  
+  if (normalized1 === normalized2) {
+    return true;
+  }
+  
+    // Murder charges (any degree or type)  const murderKeywords = ['murder', 'homicide', 'killing', 'manslaughter'];  const hasCrime1Murder = murderKeywords.some(keyword => normalized1.includes(keyword));  const hasCrime2Murder = murderKeywords.some(keyword => normalized2.includes(keyword));  if (hasCrime1Murder && hasCrime2Murder) {    return true;  }
+  
+      // Sexual crimes  const sexualKeywords = ['sexual battery', 'sexual assault', 'sexual molestation', 'rape', 'sexual abuse', 'sexual predator', 'sex predator'];  const hasCrime1Sexual = sexualKeywords.some(keyword => normalized1.includes(keyword));  const hasCrime2Sexual = sexualKeywords.some(keyword => normalized2.includes(keyword));  if (hasCrime1Sexual && hasCrime2Sexual) {    return true;  }
+  
+  // Robbery charges
+  const robberyKeywords = ['robbery', 'robbing'];
+  const hasCrime1Robbery = robberyKeywords.some(keyword => normalized1.includes(keyword));
+  const hasCrime2Robbery = robberyKeywords.some(keyword => normalized2.includes(keyword));
+  if (hasCrime1Robbery && hasCrime2Robbery) {
+    return true;
+  }
+  
+  // Burglary charges  
+  const burglaryKeywords = ['burglary', 'breaking and entering'];
+  const hasCrime1Burglary = burglaryKeywords.some(keyword => normalized1.includes(keyword));
+  const hasCrime2Burglary = burglaryKeywords.some(keyword => normalized2.includes(keyword));
+  if (hasCrime1Burglary && hasCrime2Burglary) {
+    return true;
+  }
+  
+  // Assault/Battery charges
+  const assaultKeywords = ['assault', 'battery', 'aggravated battery'];
+  const hasCrime1Assault = assaultKeywords.some(keyword => normalized1.includes(keyword));
+  const hasCrime2Assault = assaultKeywords.some(keyword => normalized2.includes(keyword));
+  if (hasCrime1Assault && hasCrime2Assault) {
+    return true;
+  }
+  
+  // Carjacking charges
+  const carjackingKeywords = ['carjacking', 'carjack'];
+  const hasCrime1Carjacking = carjackingKeywords.some(keyword => normalized1.includes(keyword));
+  const hasCrime2Carjacking = carjackingKeywords.some(keyword => normalized2.includes(keyword));
+  if (hasCrime1Carjacking && hasCrime2Carjacking) {
+    return true;
+  }
+  
+  // Drug crimes by type
+  const drugKeywords = ['cocaine', 'marijuana', 'heroin', 'methamphetamine', 'fentanyl', 'mdma', 'cannabis', 'amphetamine'];
+  const crime1Drug = drugKeywords.find(drug => normalized1.includes(drug));
+  const crime2Drug = drugKeywords.find(drug => normalized2.includes(drug));
+  
+  if (crime1Drug && crime2Drug && crime1Drug === crime2Drug) {
+    return true;
+  }
+  
+  // Weapon-related crimes
+  const weaponKeywords = ['weapon', 'gun', 'firearm', 'concealed', 'ammunition'];
+  const hasCrime1Weapon = weaponKeywords.some(weapon => normalized1.includes(weapon));
+  const hasCrime2Weapon = weaponKeywords.some(weapon => normalized2.includes(weapon));
+  
+  if (hasCrime1Weapon && hasCrime2Weapon) {
+    return true;
+  }
+  
+  // Trafficking/delivery crimes
+  const traffickingKeywords = ['trafficking', 'delivery', 'distribution', 'sale'];
+  const hasCrime1Trafficking = traffickingKeywords.some(keyword => normalized1.includes(keyword));
+  const hasCrime2Trafficking = traffickingKeywords.some(keyword => normalized2.includes(keyword));
+  if (hasCrime1Trafficking && hasCrime2Trafficking) {
+    return true;
+  }
+  
+  // Theft-related crimes
+  const theftKeywords = ['theft', 'stealing', 'stolen property', 'larceny'];
+  const hasCrime1Theft = theftKeywords.some(keyword => normalized1.includes(keyword));
+  const hasCrime2Theft = theftKeywords.some(keyword => normalized2.includes(keyword));
+  if (hasCrime1Theft && hasCrime2Theft) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Get a list of inmates with their primary charge, ensuring unique crime types
  * @param limit Maximum number of inmates to return
- * @returns Array of inmate objects
+ * @returns Array of inmate objects with unique crime types
  * @throws Error if inmates cannot be loaded
  */
 export async function getInmates(limit = 10): Promise<Inmate[]> {
-  console.log(`[CSV-DB] Fetching ${limit} inmates...`);
+  console.log(`[CSV-DB] Fetching ${limit} inmates with unique crimes...`);
   
   try {
     const startTime = Date.now();
@@ -300,17 +279,49 @@ export async function getInmates(limit = 10): Promise<Inmate[]> {
     // Shuffle the inmates to get random ones (similar to ORDER BY RANDOM() in SQLite)
     const shuffledInmates = [...inmates].sort(() => Math.random() - 0.5);
     
-    // Take only the requested number of inmates
-    const limitedInmates = shuffledInmates.slice(0, limit);
-    console.log(`[CSV-DB] Selected ${limitedInmates.length} random inmates`);
+    // Helper function to process crime text
+    const processCrime = (crimeBest: string): string => {
+      let crime = crimeBest ? crimeBest.trim() : 'Unknown charge';
+      
+      // If there are multiple crimes separated by " | ", only take the first one
+      if (crime.includes(' | ')) {
+        crime = crime.split(' | ')[0].trim();
+      }
+      
+      return crime;
+    };
+    
+    // Select inmates with unique crimes
+    const selectedInmates: CsvInmate[] = [];
+    const usedCrimes: string[] = [];
+    
+    for (const inmate of shuffledInmates) {
+      if (selectedInmates.length >= limit) {
+        break;
+      }
+      
+      const processedCrime = processCrime(inmate.Best_Crime);
+      
+      // Check if this crime is too similar to any we've already selected
+      const isSimilar = usedCrimes.some(existingCrime => 
+        areCrimesSimilar(processedCrime, existingCrime)
+      );
+      
+      if (!isSimilar) {
+        selectedInmates.push(inmate);
+        usedCrimes.push(processedCrime);
+        console.log(`[CSV-DB] Selected inmate ${inmate.InmateID} with unique crime: "${processedCrime}"`);
+      } else {
+        console.log(`[CSV-DB] Skipped inmate ${inmate.InmateID} with similar crime: "${processedCrime}"`);
+      }
+    }
+    
+    console.log(`[CSV-DB] Selected ${selectedInmates.length} inmates with unique crimes`);
     
     // Map the CSV data to the expected output format
-    const mappedInmates = limitedInmates.map(inmate => {
-      // Use the Best_Crime field directly
-      const crime = inmate.Best_Crime ?
-        inmate.Best_Crime.trim() : // Changed from AI_Description_Explanation
-        'Unknown charge';
-
+    const mappedInmates = selectedInmates.map(inmate => {
+      const crime = processCrime(inmate.Best_Crime);
+      
       // Parse the inmate ID, with fallback for invalid values
       let id: number;
       try {
@@ -319,11 +330,11 @@ export async function getInmates(limit = 10): Promise<Inmate[]> {
           console.warn(`[CSV-DB] Invalid InmateID: ${inmate.InmateID}, using fallback ID`);
           id = Math.floor(Math.random() * 10000); // Fallback ID
         }
-      } catch (e) {
+      } catch {
         console.warn(`[CSV-DB] Error parsing InmateID: ${inmate.InmateID}, using fallback ID`);
         id = Math.floor(Math.random() * 10000); // Fallback ID
       }
-        
+      
       return {
         id,
         name: (inmate.Name || 'Unknown').replace(/"/g, ''), // Remove quotes from names
@@ -349,10 +360,6 @@ export async function getInmates(limit = 10): Promise<Inmate[]> {
 /**
  * Get a random inmate from the dataset
  * @returns A single random inmate
- */
-/**
- * Get a random inmate from the dataset
- * @returns A single random inmate
  * @throws Error if inmates cannot be loaded
  */
 export async function getRandomInmate(): Promise<Inmate> {
@@ -362,10 +369,6 @@ export async function getRandomInmate(): Promise<Inmate> {
   return inmates[0];
 }
 
-/**
- * Clear the inmate cache
- * Useful for testing or when the CSV file changes
- */
 /**
  * Clear the inmate cache
  * Useful for testing or when the CSV file changes
@@ -381,7 +384,7 @@ export function clearCache(): void {
  * Useful for troubleshooting deployment issues
  * @returns Object with diagnostic information
  */
-export function getDiagnostics(): Record<string, any> {
+export function getDiagnostics(): Record<string, unknown> {
   const isRenderEnvironment = process.env.RENDER === 'true';
   const isProduction = process.env.NODE_ENV === 'production';
   
@@ -402,22 +405,25 @@ export function getDiagnostics(): Record<string, any> {
         nodeVersion: process.version
       },
       csvFile: {
-        envPath: csvPath,
+        configuredPath: csvPath,
         resolvedPath,
         exists: fileExists,
-        size: fileStats?.size || 0,
-        lastModified: fileStats?.mtime || null,
-        permissions: fileStats?.mode.toString(8) || null
+        sizeBytes: fileStats?.size || 0,
+        lastModified: fileStats?.mtime?.toISOString() || null
       },
       cache: {
-        isPopulated: !!inmateCache,
+        hasData: !!inmateCache,
         recordCount: cacheSize
       }
     };
   } catch (error) {
-    console.error(`[CSV-DB] Error getting diagnostics:`, error);
     return {
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
+      environment: {
+        isRender: isRenderEnvironment,
+        isProduction,
+        nodeEnv: process.env.NODE_ENV
+      }
     };
   }
 }
