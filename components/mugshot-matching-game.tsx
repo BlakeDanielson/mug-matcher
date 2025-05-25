@@ -978,11 +978,11 @@ export default function MugshotMatchingGame() {
         whileTap={!shouldUseModalUX ? { scale: 0.98 } : {}}
         data-crime-id={description.id.toString()} // For mobile drag and drop targeting
         className={cn(
-          "p-3 rounded-lg border-2 transition-all duration-300 shadow-md hover:shadow-lg relative overflow-hidden",
+          "p-4 rounded-lg border-2 transition-all duration-300 shadow-md hover:shadow-lg relative overflow-hidden",
           "bg-gray-800/60 backdrop-blur-sm",
           !shouldUseModalUX && "cursor-pointer transform",
-          // Reduced minimum height for more compact cards
-          isMobile ? "min-h-[120px]" : "min-h-[130px]", 
+          // Balanced height to match total mugshot section height
+          isMobile ? "min-h-[140px]" : "min-h-[160px]", 
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
@@ -1262,7 +1262,7 @@ export default function MugshotMatchingGame() {
             </div>
             <motion.div 
               className={cn(
-                "space-y-2", // Reduced spacing between crime cards
+                "space-y-2.5", // Balanced spacing between crime cards
                 isMobile && "max-h-[50vh] overflow-y-auto" // Mobile: scrollable crimes list
               )}
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
