@@ -40,6 +40,8 @@ interface Inmate {
   image: string
   crime?: string
   sentence?: string
+  sentenceYears?: number
+  sentenceDisplay?: string
 }
 
 // Enhanced Loading Component
@@ -262,6 +264,41 @@ function CrimeSelectionModal({
   )
 }
 
+// Load sentence data from extracted CSV
+async function loadSentenceData(): Promise<Record<string, { sentenceYears: number; sentenceDisplay: string }>> {
+  try {
+    const response = await fetch('/data/extracted_sentences/extracted_sentences.csv')
+    if (!response.ok) return {}
+    
+    const csvText = await response.text()
+    const lines = csvText.split('\n')
+    const headers = lines[0].split(',')
+    
+    const sentenceData: Record<string, { sentenceYears: number; sentenceDisplay: string }> = {}
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line) continue
+      
+      const values = line.split(',')
+      if (values.length >= 4) {
+        const inmateId = values[0]?.replace(/"/g, '') // Remove quotes
+        const sentenceYears = parseFloat(values[2])
+        const sentenceDisplay = values[3]?.replace(/"/g, '') // Remove quotes
+        
+        if (inmateId && !isNaN(sentenceYears) && sentenceDisplay) {
+          sentenceData[inmateId] = { sentenceYears, sentenceDisplay }
+        }
+      }
+    }
+    
+    return sentenceData
+  } catch (error) {
+    console.error('Failed to load sentence data:', error)
+    return {}
+  }
+}
+
 export default function MugshotMatchingGame() {
   const { toast } = useToast()
   const isMobile = useIsMobile()
@@ -319,9 +356,10 @@ export default function MugshotMatchingGame() {
         setLoading(true)
         setError(null)
         
-        // Add a minimum loading time for better UX
-        const [response] = await Promise.all([
+        // Load both inmate data and sentence data in parallel
+        const [response, sentenceData] = await Promise.all([
           fetch('/api/inmates'),
+          loadSentenceData(),
           new Promise(resolve => setTimeout(resolve, 1000)) // Minimum 1 second loading
         ])
         
@@ -330,8 +368,19 @@ export default function MugshotMatchingGame() {
         }
         
         const data = await response.json()
-        setInmates(data.inmates)
-        resetGame(data.inmates)
+        
+        // Merge sentence data with inmate data
+        const enrichedInmates = data.inmates.map((inmate: Inmate) => {
+          const sentenceInfo = sentenceData[inmate.id.toString()]
+          return {
+            ...inmate,
+            sentenceYears: sentenceInfo?.sentenceYears,
+            sentenceDisplay: sentenceInfo?.sentenceDisplay
+          }
+        })
+        
+        setInmates(enrichedInmates)
+        resetGame(enrichedInmates)
         setError(null)
       } catch (err) {
         console.error('Error fetching inmate data:', err)
@@ -835,9 +884,27 @@ export default function MugshotMatchingGame() {
     const matchedMugshotData = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
     const isSelectedForDesktopUX = !shouldUseModalUX && selectedDescriptionId === description.id.toString();
 
-    // Get crime severity for styling
-    const getCrimeSeverity = (crime: string) => {
+    // Get crime severity for styling (enhanced with sentence length)
+    const getCrimeSeverity = (crime: string, sentenceYears?: number) => {
       const lowercaseCrime = crime.toLowerCase();
+      
+      // First check sentence length if available
+      if (sentenceYears !== undefined) {
+        if (sentenceYears >= 99 || lowercaseCrime.includes('life') || lowercaseCrime.includes('death')) {
+          return 'high'; // Life/Death sentences
+        }
+        if (sentenceYears >= 15) {
+          return 'high'; // Long sentences (15+ years)
+        }
+        if (sentenceYears >= 5) {
+          return 'medium'; // Medium sentences (5-15 years)
+        }
+        if (sentenceYears > 0) {
+          return 'low'; // Short sentences (less than 5 years)
+        }
+      }
+      
+      // Fallback to crime type analysis
       if (lowercaseCrime.includes('murder') || lowercaseCrime.includes('homicide') || lowercaseCrime.includes('killing')) {
         return 'high';
       }
@@ -847,7 +914,7 @@ export default function MugshotMatchingGame() {
       return 'low';
     };
 
-    const severity = getCrimeSeverity(processedCrime || '');
+    const severity = getCrimeSeverity(processedCrime || '', description.sentenceYears);
     const severityColors = {
       high: { border: 'border-red-500/60', bg: 'bg-red-950/30', text: 'text-red-400', icon: 'bg-red-500' },
       medium: { border: 'border-orange-500/60', bg: 'bg-orange-950/30', text: 'text-orange-400', icon: 'bg-orange-500' },
@@ -956,11 +1023,11 @@ export default function MugshotMatchingGame() {
               {processedCrime || "Unknown crime"}
             </h3>
             
-            {description.sentence && (
+            {(description.sentenceDisplay || description.sentence) && (
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 bg-red-400 rounded-full"></div>
                 <span className="text-sm text-red-300 font-semibold bg-red-900/30 px-2 py-1 rounded-md">
-                  Sentence: {description.sentence}
+                  Sentence: {description.sentenceDisplay || description.sentence}
                 </span>
               </div>
             )}
