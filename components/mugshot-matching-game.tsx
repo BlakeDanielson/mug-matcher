@@ -1175,8 +1175,8 @@ export default function MugshotMatchingGame() {
   return (
     <div className="flex justify-center items-center min-h-screen p-6">
       <Card className="w-full max-w-7xl p-6 shadow-lg bg-gray-900/50 border border-gray-700">
-        {/* Score Display & Game Stats - All on one line */}
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+        {/* Score Display, Game Title & Game Stats - All on one line */}
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
           <div className="flex items-center space-x-4">
             <div className="bg-blue-900/50 px-4 py-2 rounded-lg border border-blue-700">
               <div className="flex items-center gap-2">
@@ -1191,6 +1191,13 @@ export default function MugshotMatchingGame() {
               <span id="high-score" className="font-bold text-amber-400 ml-2 text-lg">{formatPoints(highScore)}</span>
             </div>
           </div>
+
+          {/* Game Title - Centered between score and stats */}
+          <div className="flex-1 text-center">
+            <p className="text-lg text-gray-300 font-medium">
+              Match each criminal with their crime
+            </p>
+          </div>
           
           {/* Game Stats Badges */}
           {!results?.submitted && (
@@ -1202,13 +1209,6 @@ export default function MugshotMatchingGame() {
               />
             </div>
           )}
-        </div>
-
-        {/* Game Title - Centered above progress bar */}
-        <div className="mb-4 text-center">
-          <p className="text-lg text-gray-300">
-            Match each criminal with their crime
-          </p>
         </div>
 
         {/* Progress Bar - Full width below title */}
