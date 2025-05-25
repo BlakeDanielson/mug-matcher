@@ -978,10 +978,11 @@ export default function MugshotMatchingGame() {
         whileTap={!shouldUseModalUX ? { scale: 0.98 } : {}}
         data-crime-id={description.id.toString()} // For mobile drag and drop targeting
         className={cn(
-          "p-5 rounded-xl border-2 transition-all duration-300 shadow-lg hover:shadow-xl min-h-[140px] relative overflow-hidden",
+          "p-5 rounded-xl border-2 transition-all duration-300 shadow-lg hover:shadow-xl relative overflow-hidden",
           "bg-gray-800/60 backdrop-blur-sm",
           !shouldUseModalUX && "cursor-pointer transform",
-          isMobile && "min-h-[88px]", // Better touch targets for mobile
+          // Consistent minimum height for all states
+          isMobile ? "min-h-[180px]" : "min-h-[200px]", 
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
@@ -999,11 +1000,11 @@ export default function MugshotMatchingGame() {
         
         {/* Main content */}
         <div className="relative z-10">
-          {/* Header with crime type icon and severity indicator */}
-          <div className="flex items-start justify-between mb-3">
+          {/* Header with crime type icon and severity indicator - Fixed height */}
+          <div className="flex items-start justify-between mb-3 min-h-[60px]">
             <div className="flex items-center gap-3">
               {matchedMugshotData ? (
-                <div className="relative">
+                <div className="relative w-12 h-12 flex-shrink-0">
                   <Image 
                     src={matchedMugshotData.image} 
                     alt={matchedMugshotData.name} 
@@ -1022,7 +1023,7 @@ export default function MugshotMatchingGame() {
                 </div>
               ) : (
                 <div className={cn(
-                  "p-3 rounded-full border-2 shadow-lg",
+                  "w-12 h-12 flex items-center justify-center rounded-full border-2 shadow-lg flex-shrink-0",
                   severityColors[severity].icon,
                   "border-white/20"
                 )}>
@@ -1079,20 +1080,20 @@ export default function MugshotMatchingGame() {
 
           </div>
 
-          {/* Enhanced status section */}
-          <div className="flex items-center justify-between">
+          {/* Enhanced status section - Fixed height for consistency */}
+          <div className="flex items-center justify-between min-h-[48px]">
             {matchedMugshotData ? (
               <div className="flex items-center gap-3">
-                <div className="flex flex-col">
-                  <span className="text-base font-bold text-green-200">{matchedMugshotData.name}</span>
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col justify-center">
+                  <span className="text-base font-bold text-green-200 leading-tight">{matchedMugshotData.name}</span>
+                  <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     <span className="text-sm text-green-400 font-medium">MATCHED</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 h-full">
                 {isSelectedForDesktopUX ? (
                   <>
                     <motion.div 
