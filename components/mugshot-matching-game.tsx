@@ -1204,21 +1204,19 @@ export default function MugshotMatchingGame() {
           )}
         </div>
 
-        {/* Progress Bar - Full width below stats */}
+        {/* Game Title - Centered above progress bar */}
+        <div className="mb-4 text-center">
+          <p className="text-lg text-gray-300">
+            Match each criminal with their crime
+          </p>
+        </div>
+
+        {/* Progress Bar - Full width below title */}
         {!results?.submitted && (
           <div className="mb-4">
             <GameProgress totalMatches={totalMatches} />
           </div>
         )}
-
-        <div className="mb-4 text-center">
-          <h1 className="text-3xl font-bold text-gray-100 mb-1">
-            Criminal Lineup Challenge
-          </h1>
-          <p className="text-lg text-gray-300">
-            Match each criminal with their crime
-          </p>
-        </div>
 
         {/* Game board - Responsive Layout */}
         <div className={cn(
