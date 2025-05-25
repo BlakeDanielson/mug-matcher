@@ -304,7 +304,10 @@ function MobileCrimeSelectionModal({
                         alt={matchedMugshot.name}
                         width={40}
                         height={40}
-                        className="h-10 w-10 rounded-lg object-cover border border-gray-300"
+                        className={cn(
+                          "h-10 w-10 rounded-lg object-cover",
+                          isCurrentMatch ? "border-2 border-blue-400" : "border border-gray-300"
+                        )}
                       />
                       <div className="text-xs">
                         <p className={cn(
@@ -315,8 +318,8 @@ function MobileCrimeSelectionModal({
                         </p>
                         {isCurrentMatch && (
                           <p className="text-blue-400 flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Current
+                            <Star className="h-3 w-3" />
+                            Selected
                           </p>
                         )}
                         {isAlreadyMatched && (
@@ -789,8 +792,9 @@ export default function MugshotMatchingGame() {
           className={cn(
             "relative rounded-xl overflow-hidden border-2 aspect-square shadow-lg",
             "bg-gray-800/50 transition-all duration-300",
+            // Selection takes priority over matching for visual clarity
             isSelected && "border-blue-500 ring-4 ring-blue-200/50",
-            isMatched && !results?.submitted && "border-green-500 ring-4 ring-green-200/50",
+            isMatched && !isSelected && !results?.submitted && "border-green-500 ring-4 ring-green-200/50",
             !isSelected && !isMatched && "border-gray-600",
             results?.submitted && !Object.entries(matches).some(([descriptionId, matchedImageId]) =>
               matchedImageId === mugshot.id.toString() && descriptionId === mugshot.id.toString()
@@ -853,9 +857,9 @@ export default function MugshotMatchingGame() {
             )}
           </AnimatePresence>
 
-          {/* Match indicator with animation */}
+          {/* Match indicator with animation - only show when matched but not selected */}
           <AnimatePresence>
-            {isMatched && !results?.submitted && (
+            {isMatched && !isSelected && !results?.submitted && (
               <motion.div 
                 className="absolute top-3 right-3"
                 initial={{ scale: 0, rotate: -180 }}
@@ -983,13 +987,16 @@ export default function MugshotMatchingGame() {
           !shouldUseModalUX && "cursor-pointer transform",
           // Balanced height to match total mugshot section height
           isMobile ? "min-h-[140px]" : "min-h-[160px]", 
+          // Selection takes priority over matching for visual clarity
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
               ? "border-green-500 bg-green-950/40 ring-2 ring-green-500/30"
               : results?.submitted
                 ? "border-red-500 bg-red-950/40 ring-2 ring-red-500/30"
-                : `${severityColors[severity].border} ${severityColors[severity].bg} hover:border-gray-400`,
+                : matchedMugshotData && !isSelectedForDesktopUX
+                  ? "border-green-500 bg-green-950/40 ring-2 ring-green-500/30"
+                  : `${severityColors[severity].border} ${severityColors[severity].bg} hover:border-gray-400`,
           touchTargetProps.className
         )}
         style={touchTargetProps.style}
@@ -1076,9 +1083,21 @@ export default function MugshotMatchingGame() {
             </p>
           </div>
 
-          {/* Compact status section */}
+          {/* Compact status section - prioritize selection over matching */}
           <div className="flex items-center justify-between">
-            {matchedMugshotData ? (
+            {isSelectedForDesktopUX ? (
+              <div className="flex items-center gap-1.5">
+                <motion.div 
+                  className="w-2 h-2 bg-blue-400 rounded-full"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                />
+                <span className="text-xs text-blue-300 font-medium">SELECTED</span>
+                {matchedMugshotData && (
+                  <span className="text-xs text-blue-200 ml-1">({matchedMugshotData.name})</span>
+                )}
+              </div>
+            ) : matchedMugshotData ? (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-green-200 truncate">{matchedMugshotData.name}</span>
                 <div className="flex items-center gap-1">
@@ -1088,21 +1107,8 @@ export default function MugshotMatchingGame() {
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
-                {isSelectedForDesktopUX ? (
-                  <>
-                    <motion.div 
-                      className="w-2 h-2 bg-blue-400 rounded-full"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ repeat: Infinity, duration: 1.5 }}
-                    />
-                    <span className="text-xs text-blue-300 font-medium">SELECTED</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                    <span className="text-xs text-gray-400 font-medium">TAP TO SELECT</span>
-                  </>
-                )}
+                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <span className="text-xs text-gray-400 font-medium">TAP TO SELECT</span>
               </div>
             )}
           </div>
@@ -1135,9 +1141,9 @@ export default function MugshotMatchingGame() {
           )}
         </AnimatePresence>
 
-        {/* Matching pulse effect */}
+        {/* Matching pulse effect - only show when matched but not selected */}
         <AnimatePresence>
-          {matchedMugshotData && !results?.submitted && (
+          {matchedMugshotData && !isSelectedForDesktopUX && !results?.submitted && (
             <motion.div 
               className="absolute inset-0 border-2 border-green-400 rounded-xl"
               initial={{ opacity: 0 }}
