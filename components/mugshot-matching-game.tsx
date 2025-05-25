@@ -1194,9 +1194,9 @@ export default function MugshotMatchingGame() {
 
           {/* Game Title - Centered between score and stats */}
           <div className="flex-1 text-center">
-            <p className="text-lg text-gray-300 font-medium">
-              Match each criminal with their crime
-            </p>
+            <h1 className="text-3xl md:text-5xl font-bold text-center mb-2 gradient-text">
+              Mugshot Matching Game
+            </h1>
           </div>
           
           {/* Game Stats Badges */}
