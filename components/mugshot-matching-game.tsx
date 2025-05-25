@@ -835,19 +835,40 @@ export default function MugshotMatchingGame() {
     const matchedMugshotData = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
     const isSelectedForDesktopUX = !shouldUseModalUX && selectedDescriptionId === description.id.toString();
 
+    // Get crime severity for styling
+    const getCrimeSeverity = (crime: string) => {
+      const lowercaseCrime = crime.toLowerCase();
+      if (lowercaseCrime.includes('murder') || lowercaseCrime.includes('homicide') || lowercaseCrime.includes('killing')) {
+        return 'high';
+      }
+      if (lowercaseCrime.includes('assault') || lowercaseCrime.includes('robbery') || lowercaseCrime.includes('sexual') || lowercaseCrime.includes('battery')) {
+        return 'medium';
+      }
+      return 'low';
+    };
+
+    const severity = getCrimeSeverity(processedCrime || '');
+    const severityColors = {
+      high: { border: 'border-red-500/60', bg: 'bg-red-950/30', text: 'text-red-400', icon: 'bg-red-500' },
+      medium: { border: 'border-orange-500/60', bg: 'bg-orange-950/30', text: 'text-orange-400', icon: 'bg-orange-500' },
+      low: { border: 'border-yellow-500/60', bg: 'bg-yellow-950/30', text: 'text-yellow-400', icon: 'bg-yellow-500' }
+    };
+
     return (
-      <div
+      <motion.div
+        whileHover={!shouldUseModalUX ? { scale: 1.02, y: -2 } : {}}
+        whileTap={!shouldUseModalUX ? { scale: 0.98 } : {}}
         className={cn(
-          "p-4 rounded-lg border transition-all duration-200 shadow-sm hover:shadow-md min-h-[100px] relative",
-          "bg-gray-800/50",
-          !shouldUseModalUX && "cursor-pointer hover:border-gray-300 hover:scale-[1.01] transform",
+          "p-5 rounded-xl border-2 transition-all duration-300 shadow-lg hover:shadow-xl min-h-[140px] relative overflow-hidden",
+          "bg-gray-800/60 backdrop-blur-sm",
+          !shouldUseModalUX && "cursor-pointer transform",
           isSelectedForDesktopUX 
-            ? "border-blue-500 ring-2 ring-blue-200"
+            ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
-              ? "border-green-500 bg-green-50"
+              ? "border-green-500 bg-green-950/40 ring-2 ring-green-500/30"
               : results?.submitted
-                ? "border-red-500 bg-red-50"
-                : "border-gray-600"
+                ? "border-red-500 bg-red-950/40 ring-2 ring-red-500/30"
+                : `${severityColors[severity].border} ${severityColors[severity].bg} hover:border-gray-400`
         )}
         onClick={() => {
           if (!shouldUseModalUX) {
@@ -855,91 +876,172 @@ export default function MugshotMatchingGame() {
           }
         }}
       >
-        {/* Main content - more compact layout */}
-        <div className="flex items-start gap-3">
-          {/* Icon or matched image */}
-          {matchedMugshotData ? (
-            <div className="relative flex-shrink-0">
-              <Image 
-                src={matchedMugshotData.image} 
-                alt={matchedMugshotData.name} 
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-full object-cover border-2 border-gray-600 shadow-sm"
-              />
-              <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-0.5">
-                <CheckCircle2 className="h-3 w-3 text-white" />
-              </div>
-            </div>
-          ) : (
-            <div className="flex-shrink-0 p-2 rounded-full bg-gray-700 border border-gray-600">
-              <AlertCircle className="h-4 w-4 text-gray-300" />
-            </div>
-          )}
-
-          {/* Crime description and status combined */}
-          <div className="flex-1 min-w-0">
-            <div className="text-base md:text-lg font-medium text-gray-100 break-words leading-snug mb-1">
-              {processedCrime || "Unknown crime"}
-            </div>
-            
-            {description.sentence && (
-              <div className="text-xs text-red-400 font-semibold mb-2">
-                Sentence: {description.sentence}
-              </div>
-            )}
-
-            {/* Status info */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {matchedMugshotData ? (
-                  <>
-                    <span className="text-sm font-medium text-gray-100">{matchedMugshotData.name}</span>
-                    <span className="text-xs text-green-400 font-medium">✓ Matched</span>
-                  </>
-                ) : (
-                  <span className="text-sm text-gray-400">
-                    {isSelectedForDesktopUX ? "Selected - Choose mugshot" : "Click to select"}
-                  </span>
-                )}
-              </div>
-
-              {/* Result indicator */}
-              {results?.submitted && (
-                <div className="flex-shrink-0">
-                  {matches[description.id.toString()] === description.id.toString() ? (
-                    <div className="bg-green-500 rounded-full p-1">
-                      <CheckCircle2 className="h-4 w-4 text-white" />
-                    </div>
-                  ) : (
-                    <div className="bg-red-500 rounded-full p-1">
-                      <XCircle className="h-4 w-4 text-white" />
-                    </div>
-                  )}
+        {/* Gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 pointer-events-none" />
+        
+        {/* Main content */}
+        <div className="relative z-10">
+          {/* Header with crime type icon and severity indicator */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              {matchedMugshotData ? (
+                <div className="relative">
+                  <Image 
+                    src={matchedMugshotData.image} 
+                    alt={matchedMugshotData.name} 
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded-full object-cover border-3 border-green-500 shadow-lg"
+                  />
+                  <motion.div 
+                    className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1 shadow-lg"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-white" />
+                  </motion.div>
+                </div>
+              ) : (
+                <div className={cn(
+                  "p-3 rounded-full border-2 shadow-lg",
+                  severityColors[severity].icon,
+                  "border-white/20"
+                )}>
+                  <AlertCircle className="h-5 w-5 text-white" />
                 </div>
               )}
+              
+              {/* Severity badge */}
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "border-0 text-xs font-semibold px-2 py-1",
+                  severity === 'high' && "bg-red-500/20 text-red-300",
+                  severity === 'medium' && "bg-orange-500/20 text-orange-300",
+                  severity === 'low' && "bg-yellow-500/20 text-yellow-300"
+                )}
+              >
+                {severity.toUpperCase()} RISK
+              </Badge>
             </div>
+
+            {/* Status indicator */}
+            {results?.submitted && (
+              <motion.div 
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="flex-shrink-0"
+              >
+                {matches[description.id.toString()] === description.id.toString() ? (
+                  <div className="bg-green-500 rounded-full p-2 shadow-lg ring-4 ring-green-500/30">
+                    <CheckCircle2 className="h-5 w-5 text-white" />
+                  </div>
+                ) : (
+                  <div className="bg-red-500 rounded-full p-2 shadow-lg ring-4 ring-red-500/30">
+                    <XCircle className="h-5 w-5 text-white" />
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Crime description with better typography */}
+          <div className="mb-4">
+            <h3 className={cn(
+              "text-lg font-bold leading-tight mb-2",
+              matchedMugshotData ? "text-green-200" : "text-gray-100"
+            )}>
+              {processedCrime || "Unknown crime"}
+            </h3>
+            
+            {description.sentence && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                <span className="text-sm text-red-300 font-semibold bg-red-900/30 px-2 py-1 rounded-md">
+                  Sentence: {description.sentence}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Enhanced status section */}
+          <div className="flex items-center justify-between">
+            {matchedMugshotData ? (
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-base font-bold text-green-200">{matchedMugshotData.name}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-400 font-medium">MATCHED</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {isSelectedForDesktopUX ? (
+                  <>
+                    <motion.div 
+                      className="w-3 h-3 bg-blue-400 rounded-full"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                    />
+                    <span className="text-sm text-blue-300 font-medium">SELECTED - Choose suspect</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                    <span className="text-sm text-gray-400 font-medium">CLICK TO SELECT</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Selection indicator overlay */}
-        {isSelectedForDesktopUX && !results?.submitted && (
-          <div className="absolute top-2 right-2">
-            <div className="bg-blue-500 rounded-full p-1 shadow-lg">
-              <Star className="h-3 w-3 text-white" />
-            </div>
-          </div>
-        )}
+        {/* Selection indicator with animation */}
+        <AnimatePresence>
+          {isSelectedForDesktopUX && !results?.submitted && (
+            <motion.div 
+              className="absolute top-3 right-3"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 180 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <motion.div 
+                className="bg-blue-500 rounded-full p-2 shadow-lg ring-4 ring-blue-500/40"
+                animate={{ 
+                  boxShadow: [
+                    "0 0 0 0 rgba(59, 130, 246, 0.7)",
+                    "0 0 0 15px rgba(59, 130, 246, 0)",
+                    "0 0 0 0 rgba(59, 130, 246, 0)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Star className="h-4 w-4 text-white" />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Selected badge for desktop */}
-        {isSelectedForDesktopUX && !results?.submitted && (
-          <div className="absolute top-2 left-2">
-            <Badge variant="outline" className="border-blue-500 text-blue-300 bg-blue-900/80 text-xs px-2 py-0.5">
-              Selected
-            </Badge>
-          </div>
-        )}
-      </div>
+        {/* Matching pulse effect */}
+        <AnimatePresence>
+          {matchedMugshotData && !results?.submitted && (
+            <motion.div 
+              className="absolute inset-0 border-2 border-green-400 rounded-xl"
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: [0, 0.5, 0],
+                scale: [1, 1.02, 1]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          )}
+        </AnimatePresence>
+      </motion.div>
     );
   }
 
