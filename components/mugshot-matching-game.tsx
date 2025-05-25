@@ -978,11 +978,11 @@ export default function MugshotMatchingGame() {
         whileTap={!shouldUseModalUX ? { scale: 0.98 } : {}}
         data-crime-id={description.id.toString()} // For mobile drag and drop targeting
         className={cn(
-          "p-5 rounded-xl border-2 transition-all duration-300 shadow-lg hover:shadow-xl relative overflow-hidden",
+          "p-3 rounded-lg border-2 transition-all duration-300 shadow-md hover:shadow-lg relative overflow-hidden",
           "bg-gray-800/60 backdrop-blur-sm",
           !shouldUseModalUX && "cursor-pointer transform",
-          // Consistent minimum height for all states
-          isMobile ? "min-h-[180px]" : "min-h-[200px]", 
+          // Reduced minimum height for more compact cards
+          isMobile ? "min-h-[120px]" : "min-h-[130px]", 
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
@@ -1000,48 +1000,48 @@ export default function MugshotMatchingGame() {
         
         {/* Main content */}
         <div className="relative z-10">
-          {/* Header with crime type icon and severity indicator - Fixed height */}
-          <div className="flex items-start justify-between mb-3 min-h-[60px]">
-            <div className="flex items-center gap-3">
+          {/* Compact header with icon and severity */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
               {matchedMugshotData ? (
-                <div className="relative w-12 h-12 flex-shrink-0">
+                <div className="relative w-8 h-8 flex-shrink-0">
                   <Image 
                     src={matchedMugshotData.image} 
                     alt={matchedMugshotData.name} 
-                    width={48}
-                    height={48}
-                    className="h-12 w-12 rounded-full object-cover border-3 border-green-500 shadow-lg"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-full object-cover border-2 border-green-500 shadow-md"
                   />
                   <motion.div 
-                    className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1 shadow-lg"
+                    className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 shadow-md"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    <CheckCircle2 className="h-4 w-4 text-white" />
+                    <CheckCircle2 className="h-3 w-3 text-white" />
                   </motion.div>
                 </div>
               ) : (
                 <div className={cn(
-                  "w-12 h-12 flex items-center justify-center rounded-full border-2 shadow-lg flex-shrink-0",
+                  "w-8 h-8 flex items-center justify-center rounded-full border shadow-md flex-shrink-0",
                   severityColors[severity].icon,
                   "border-white/20"
                 )}>
-                  <AlertCircle className="h-5 w-5 text-white" />
+                  <AlertCircle className="h-4 w-4 text-white" />
                 </div>
               )}
               
-              {/* Severity badge */}
+              {/* Compact severity badge */}
               <Badge 
                 variant="outline" 
                 className={cn(
-                  "border-0 text-xs font-semibold px-2 py-1",
+                  "border-0 text-xs font-medium px-1.5 py-0.5",
                   severity === 'high' && "bg-red-500/20 text-red-300",
                   severity === 'medium' && "bg-orange-500/20 text-orange-300",
                   severity === 'low' && "bg-yellow-500/20 text-yellow-300"
                 )}
               >
-                {severity.toUpperCase()} RISK
+                {severity.toUpperCase()}
               </Badge>
             </div>
 
@@ -1066,47 +1066,41 @@ export default function MugshotMatchingGame() {
             )}
           </div>
 
-          {/* Crime description with better typography */}
-          <div className="mb-4">
-            <h3 className={cn(
-              "text-lg font-bold leading-tight mb-2",
+          {/* Compact crime description */}
+          <div className="mb-2">
+            <p className={cn(
+              "text-sm font-medium leading-snug",
               matchedMugshotData ? "text-green-200" : "text-gray-100"
             )}>
               {processedCrime || "Unknown crime"}
-            </h3>
-            
-
-            
-
+            </p>
           </div>
 
-          {/* Enhanced status section - Fixed height for consistency */}
-          <div className="flex items-center justify-between min-h-[48px]">
+          {/* Compact status section */}
+          <div className="flex items-center justify-between">
             {matchedMugshotData ? (
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col justify-center">
-                  <span className="text-base font-bold text-green-200 leading-tight">{matchedMugshotData.name}</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-400 font-medium">MATCHED</span>
-                  </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-green-200 truncate">{matchedMugshotData.name}</span>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-green-400 font-medium">MATCHED</span>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 h-full">
+              <div className="flex items-center gap-1.5">
                 {isSelectedForDesktopUX ? (
                   <>
                     <motion.div 
-                      className="w-3 h-3 bg-blue-400 rounded-full"
+                      className="w-2 h-2 bg-blue-400 rounded-full"
                       animate={{ scale: [1, 1.2, 1] }}
                       transition={{ repeat: Infinity, duration: 1.5 }}
                     />
-                    <span className="text-sm text-blue-300 font-medium">SELECTED - Choose suspect</span>
+                    <span className="text-xs text-blue-300 font-medium">SELECTED</span>
                   </>
                 ) : (
                   <>
-                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                    <span className="text-sm text-gray-400 font-medium">CLICK TO SELECT</span>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                    <span className="text-xs text-gray-400 font-medium">TAP TO SELECT</span>
                   </>
                 )}
               </div>
@@ -1268,7 +1262,7 @@ export default function MugshotMatchingGame() {
             </div>
             <motion.div 
               className={cn(
-                "space-y-3",
+                "space-y-2", // Reduced spacing between crime cards
                 isMobile && "max-h-[50vh] overflow-y-auto" // Mobile: scrollable crimes list
               )}
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
