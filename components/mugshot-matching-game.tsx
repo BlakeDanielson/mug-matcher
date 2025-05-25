@@ -125,7 +125,7 @@ function GameError({ error, onRetry }: { error: string; onRetry: () => void }) {
   )
 }
 
-// Enhanced Stats Display
+// Enhanced Stats Display - Just the badges, progress bar moved separately
 function GameStats({ 
   totalMatches, 
   correctMatches, 
@@ -146,10 +146,9 @@ function GameStats({
   }, [gameStartTime])
   
   const accuracy = totalMatches > 0 ? Math.round((correctMatches / totalMatches) * 100) : 0
-  const progressValue = totalMatches > 0 ? (totalMatches / 6) * 100 : 0
   
   return (
-    <div className="flex flex-wrap justify-center gap-3 mb-4">
+    <>
       <Badge variant="outline" className="border-blue-500/50 bg-blue-900/30 text-blue-300 px-3 py-1">
         <Timer className="h-3 w-3 mr-1" />
         {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
@@ -164,17 +163,28 @@ function GameStats({
         <Star className="h-3 w-3 mr-1" />
         {accuracy}% Accuracy
       </Badge>
-      
-      <div className="w-full max-w-xs">
-        <div className="flex justify-between text-xs text-gray-400 mb-1">
-          <span>Progress</span>
-          <span>{totalMatches}/6</span>
-        </div>
-        <Progress 
-          value={progressValue} 
-          className="h-2 bg-gray-700"
-        />
+    </>
+  )
+}
+
+// Progress Bar Component
+function GameProgress({ 
+  totalMatches 
+}: { 
+  totalMatches: number 
+}) {
+  const progressValue = totalMatches > 0 ? (totalMatches / 6) * 100 : 0
+  
+  return (
+    <div className="w-full">
+      <div className="flex justify-between text-xs text-gray-400 mb-1">
+        <span>Progress</span>
+        <span>{totalMatches}/6</span>
       </div>
+      <Progress 
+        value={progressValue} 
+        className="h-2 bg-gray-700"
+      />
     </div>
   )
 }
@@ -1165,9 +1175,9 @@ export default function MugshotMatchingGame() {
   return (
     <div className="flex justify-center items-center min-h-screen p-6">
       <Card className="w-full max-w-7xl p-6 shadow-lg bg-gray-900/50 border border-gray-700">
-        {/* Score Display */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-6">
+        {/* Score Display & Game Stats - All on one line */}
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <div className="flex items-center space-x-4">
             <div className="bg-blue-900/50 px-4 py-2 rounded-lg border border-blue-700">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-blue-400" />
@@ -1181,15 +1191,24 @@ export default function MugshotMatchingGame() {
               <span id="high-score" className="font-bold text-amber-400 ml-2 text-lg">{formatPoints(highScore)}</span>
             </div>
           </div>
+          
+          {/* Game Stats Badges */}
+          {!results?.submitted && (
+            <div className="flex items-center gap-3">
+              <GameStats 
+                totalMatches={totalMatches}
+                correctMatches={correctMatches}
+                gameStartTime={gameStartTimeRef.current}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Game Stats */}
+        {/* Progress Bar - Full width below stats */}
         {!results?.submitted && (
-          <GameStats 
-            totalMatches={totalMatches}
-            correctMatches={correctMatches}
-            gameStartTime={gameStartTimeRef.current}
-          />
+          <div className="mb-4">
+            <GameProgress totalMatches={totalMatches} />
+          </div>
         )}
 
         <div className="mb-4 text-center">
