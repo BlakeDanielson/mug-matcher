@@ -8,10 +8,16 @@ import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy, Timer, Star, Target } from "lucide-react"
+import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy, Timer, Star, Target, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useToast } from "@/hooks/use-toast"
+import { 
+  useHapticFeedback, 
+  useMobileDragDrop, 
+  useSwipeGesture, 
+  useTouchTarget 
+} from "@/hooks/use-mobile-interactions"
 import { AdBanner } from "@/components/ui/ad-banner"
 import { InterRoundAdModal } from "@/components/ui/inter-round-ad-modal"
 
@@ -187,6 +193,13 @@ function CrimeSelectionModal({
   availableCrimes: Inmate[]
   onCrimeSelect: (descriptionId: string) => void
 }) {
+  const { triggerHaptic } = useHapticFeedback()
+  
+  const handleCrimeSelect = (crimeId: string) => {
+    triggerHaptic('light')
+    onCrimeSelect(crimeId)
+  }
+  
   if (!isOpen) return null
 
   return (
@@ -224,7 +237,7 @@ function CrimeSelectionModal({
                 key={crimeDesc.id}
                 variant="outline"
                 className="w-full justify-start text-left h-auto py-3 px-4 border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-blue-300 transition-colors duration-200 rounded-lg"
-                onClick={() => onCrimeSelect(crimeDesc.id.toString())}
+                onClick={() => handleCrimeSelect(crimeDesc.id.toString())}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-1 p-1 rounded-full bg-gray-100">
@@ -262,6 +275,27 @@ export default function MugshotMatchingGame() {
   const { toast } = useToast()
   const isMobile = useIsMobile()
   const shouldUseModalUX = isMobile
+  
+  // Mobile interaction hooks
+  const { triggerHaptic } = useHapticFeedback()
+  const { touchTargetProps } = useTouchTarget()
+  
+  // Swipe gesture support for mobile navigation
+  const [currentMugshotIndex, setCurrentMugshotIndex] = useState(0)
+  const { touchProps: swipeProps } = useSwipeGesture({
+    onSwipeLeft: () => {
+      if (isMobile && currentMugshotIndex < shuffledMugshotImages.length - 1) {
+        setCurrentMugshotIndex(prev => prev + 1)
+        triggerHaptic('light')
+      }
+    },
+    onSwipeRight: () => {
+      if (isMobile && currentMugshotIndex > 0) {
+        setCurrentMugshotIndex(prev => prev - 1)
+        triggerHaptic('light')
+      }
+    }
+  })
 
   const [inmates, setInmates] = useState<Inmate[]>([])
   const [shuffledMugshotImages, setShuffledMugshotImages] = useState<Inmate[]>([])
@@ -606,6 +640,18 @@ export default function MugshotMatchingGame() {
       detailedResults: detailedResults
     })
 
+    // Haptic feedback based on performance
+    if (score === total && total > 0) {
+      // Perfect score - success pattern
+      triggerHaptic('success');
+    } else if (percentage >= 70) {
+      // Good score - medium feedback
+      triggerHaptic('medium');
+    } else {
+      // Poor score - error pattern
+      triggerHaptic('error');
+    }
+
     toast({
       title: `Your Score: ${score}/${total}`,
       description: `You got ${percentage}% correct! ${totalPointsEarned > 0 ? `+${formatPoints(totalPointsEarned)} points!` : ''}`,
@@ -638,13 +684,16 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  // Enhanced Selectable Mugshot Component with Animations
+  // Enhanced Selectable Mugshot Component with Mobile Improvements
   function SelectableMugshot({ mugshot, index }: { mugshot: Inmate; index: number }) {
     const isMatched = Object.values(matches).includes(mugshot.id.toString());
     const isSelected = selectedMugshotId === mugshot.id.toString();
     const [isFlashing, setIsFlashing] = useState(false);
 
     const handleMugshotClick = () => {
+      // Haptic feedback for selection
+      triggerHaptic('light');
+      
       setSelectedMugshotId(mugshot.id.toString());
       
       // Flash effect when selecting
@@ -656,15 +705,62 @@ export default function MugshotMatchingGame() {
       }
     };
 
+    // Mobile drag and drop functionality
+    const handleDrop = (item: Inmate, targetElement: Element | null) => {
+      if (!targetElement || !isMobile) return;
+      
+      // Find if target is a crime description card
+      const crimeCard = targetElement.closest('[data-crime-id]');
+      if (crimeCard) {
+        const crimeId = crimeCard.getAttribute('data-crime-id');
+        if (crimeId) {
+          // Haptic feedback for successful drop
+          triggerHaptic('success');
+          
+          // Track attempt count
+          setAttemptCounts(prev => ({
+            ...prev,
+            [crimeId]: (prev[crimeId] || 0) + 1
+          }));
+
+          // Update matches
+          setMatches((prev) => {
+            const newMatches = { ...prev };
+            // Remove previous assignment if any
+            Object.keys(newMatches).forEach(key => {
+              if (newMatches[key] === mugshot.id.toString()) {
+                newMatches[key] = null;
+              }
+            });
+            // Assign new match
+            newMatches[crimeId] = mugshot.id.toString();
+            return newMatches;
+          });
+        }
+      } else {
+        // Haptic feedback for invalid drop
+        triggerHaptic('warning');
+      }
+    };
+
+    const { dragProps, isDragging } = useMobileDragDrop(mugshot, handleDrop);
+
     return (
       <motion.div
         initial={!hasInitiallyLoaded ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={!hasInitiallyLoaded ? { delay: index * 0.1, duration: 0.5 } : { duration: 0 }}
-        className="cursor-pointer group"
+        className={cn(
+          "cursor-pointer group relative",
+          isMobile && "min-h-[88px] min-w-[88px]", // Better touch targets for mobile
+          isDragging && "z-50",
+          touchTargetProps.className
+        )}
         onClick={handleMugshotClick}
         whileHover={{ y: -4 }}
         whileTap={{ scale: 0.98 }}
+        style={touchTargetProps.style}
+        {...(isMobile ? dragProps : {})} // Apply drag props only on mobile
       >
         <motion.div
           className={cn(
@@ -845,27 +941,35 @@ export default function MugshotMatchingGame() {
       low: { border: 'border-yellow-500/60', bg: 'bg-yellow-950/30', text: 'text-yellow-400', icon: 'bg-yellow-500' }
     };
 
+    const handleCrimeClick = () => {
+      if (!shouldUseModalUX) {
+        // Haptic feedback for selection
+        triggerHaptic('light');
+        setSelectedDescriptionId(description.id.toString());
+      }
+    };
+
     return (
       <motion.div
         whileHover={!shouldUseModalUX ? { scale: 1.02, y: -2 } : {}}
         whileTap={!shouldUseModalUX ? { scale: 0.98 } : {}}
+        data-crime-id={description.id.toString()} // For mobile drag and drop targeting
         className={cn(
           "p-5 rounded-xl border-2 transition-all duration-300 shadow-lg hover:shadow-xl min-h-[140px] relative overflow-hidden",
           "bg-gray-800/60 backdrop-blur-sm",
           !shouldUseModalUX && "cursor-pointer transform",
+          isMobile && "min-h-[88px]", // Better touch targets for mobile
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
               ? "border-green-500 bg-green-950/40 ring-2 ring-green-500/30"
               : results?.submitted
                 ? "border-red-500 bg-red-950/40 ring-2 ring-red-500/30"
-                : `${severityColors[severity].border} ${severityColors[severity].bg} hover:border-gray-400`
+                : `${severityColors[severity].border} ${severityColors[severity].bg} hover:border-gray-400`,
+          touchTargetProps.className
         )}
-        onClick={() => {
-          if (!shouldUseModalUX) {
-            setSelectedDescriptionId(description.id.toString());
-          }
-        }}
+        style={touchTargetProps.style}
+        onClick={handleCrimeClick}
       >
         {/* Gradient overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 pointer-events-none" />
@@ -1073,14 +1177,18 @@ export default function MugshotMatchingGame() {
           </p>
         </div>
 
-        {/* Game board - Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 min-h-[600px]">
-          {/* Left Column - Mugshots Section */}
+        {/* Game board - Responsive Layout */}
+        <div className={cn(
+          "min-h-[600px]",
+          isMobile ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+        )}>
+          {/* Mugshots Section */}
           <motion.div
             initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
             animate={{ opacity: 1, x: 0 }}
             transition={animationsEnabled ? { duration: 0.6 } : { duration: 0 }}
             className="space-y-6"
+            {...(isMobile ? swipeProps : {})} // Add swipe support for mobile
           >
             <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
               <motion.div 
@@ -1091,22 +1199,111 @@ export default function MugshotMatchingGame() {
               >
                 <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
                 <h2 className="text-xl font-bold text-gray-100">Mugshots</h2>
-                <span className="text-sm text-gray-400 ml-2">Click a mugshot to select them</span>
+                <span className="text-sm text-gray-400 ml-2">
+                  {isMobile ? "Tap to select or drag to match" : "Click a mugshot to select them"}
+                </span>
               </motion.div>
+              {/* Mobile navigation controls */}
+              {isMobile && shuffledMugshotImages.length > 1 && (
+                <div className="flex items-center justify-between mt-2">
+                                     <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => {
+                       if (currentMugshotIndex > 0) {
+                         setCurrentMugshotIndex(prev => prev - 1)
+                         triggerHaptic('light')
+                       }
+                     }}
+                     disabled={currentMugshotIndex === 0}
+                     className={cn(
+                       "flex items-center gap-1 bg-gray-800 border-gray-600 text-gray-300",
+                       touchTargetProps.className
+                     )}
+                     style={touchTargetProps.style}
+                   >
+                    <ChevronLeft className="h-4 w-4" />
+                    Prev
+                  </Button>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {currentMugshotIndex + 1} of {shuffledMugshotImages.length}
+                    </span>
+                    <div className="flex gap-1">
+                      {shuffledMugshotImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setCurrentMugshotIndex(index)
+                            triggerHaptic('light')
+                          }}
+                                                     className={cn(
+                             "w-3 h-3 rounded-full transition-colors",
+                             index === currentMugshotIndex ? "bg-blue-400" : "bg-gray-600",
+                             touchTargetProps.className
+                           )}
+                           style={touchTargetProps.style}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                                     <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => {
+                       if (currentMugshotIndex < shuffledMugshotImages.length - 1) {
+                         setCurrentMugshotIndex(prev => prev + 1)
+                         triggerHaptic('light')
+                       }
+                     }}
+                     disabled={currentMugshotIndex === shuffledMugshotImages.length - 1}
+                     className={cn(
+                       "flex items-center gap-1 bg-gray-800 border-gray-600 text-gray-300",
+                       touchTargetProps.className
+                     )}
+                     style={touchTargetProps.style}
+                   >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
             <motion.div 
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4"
+              className={cn(
+                isMobile 
+                  ? "flex overflow-x-hidden" // Mobile: horizontal scroll
+                  : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4" // Desktop: grid
+              )}
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 0.4, duration: 0.8 } : { duration: 0 }}
             >
-              {shuffledMugshotImages.map((mugshot, index) => (
-                <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
-              ))}
+              {isMobile ? (
+                // Mobile: Show one mugshot at a time with swipe navigation
+                <div className="w-full flex justify-center">
+                  {shuffledMugshotImages[currentMugshotIndex] && (
+                    <div className="w-full max-w-sm">
+                      <SelectableMugshot 
+                        key={shuffledMugshotImages[currentMugshotIndex].id} 
+                        mugshot={shuffledMugshotImages[currentMugshotIndex]} 
+                        index={currentMugshotIndex} 
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Desktop: Show all mugshots in grid
+                shuffledMugshotImages.map((mugshot, index) => (
+                  <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
+                ))
+              )}
             </motion.div>
           </motion.div>
 
-          {/* Right Column - Crime Descriptions Section */}
+          {/* Crime Descriptions Section */}
           <motion.div
             initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1122,11 +1319,16 @@ export default function MugshotMatchingGame() {
               >
                 <div className="w-4 h-4 bg-blue-500 rounded-full shadow-lg"></div>
                 <h2 className="text-xl font-bold text-gray-100">Crimes</h2>
-                <span className="text-sm text-gray-400 ml-2">Click a crime description to match</span>
+                <span className="text-sm text-gray-400 ml-2">
+                  {isMobile ? "Tap to select or drop zone for suspects" : "Click a crime description to match"}
+                </span>
               </motion.div>
             </div>
             <motion.div 
-              className="space-y-3"
+              className={cn(
+                "space-y-3",
+                isMobile && "max-h-[50vh] overflow-y-auto" // Mobile: scrollable crimes list
+              )}
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 0.7, duration: 0.8 } : { duration: 0 }}
