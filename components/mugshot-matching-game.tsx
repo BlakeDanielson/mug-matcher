@@ -179,24 +179,36 @@ function GameStats({
   )
 }
 
-// Modal for selecting a crime for a chosen mugshot
-function CrimeSelectionModal({
+// Enhanced Mobile Crime Selection Modal - Shows all crimes with match context
+function MobileCrimeSelectionModal({
   isOpen,
   onClose,
   selectedMugshot,
-  availableCrimes,
+  allCrimes,
+  matches,
+  getInmateDataById,
   onCrimeSelect,
 }: {
   isOpen: boolean
   onClose: () => void
   selectedMugshot: Inmate
-  availableCrimes: Inmate[]
-  onCrimeSelect: (descriptionId: string) => void
+  allCrimes: Inmate[]
+  matches: Record<string, string | null>
+  getInmateDataById: (id: string | number) => Inmate | undefined
+  onCrimeSelect: (crimeId: string) => void
 }) {
   const { triggerHaptic } = useHapticFeedback()
   
   const handleCrimeSelect = (crimeId: string) => {
-    triggerHaptic('light')
+    // Check if this crime is already matched
+    const isAlreadyMatched = matches[crimeId] && matches[crimeId] !== selectedMugshot.id.toString()
+    
+    if (isAlreadyMatched) {
+      triggerHaptic('warning')
+      return // Don't allow selection of already matched crimes
+    }
+    
+    triggerHaptic('success')
     onCrimeSelect(crimeId)
   }
   
@@ -204,25 +216,26 @@ function CrimeSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gray-900/95 border-gray-700">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] bg-gray-900/95 border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-gray-100 flex items-center gap-2">
             <Target className="h-5 w-5 text-blue-400" />
             Match Crime for: {selectedMugshot.name}
           </DialogTitle>
           <DialogDescription className="text-gray-300">
-            Select the crime description that matches this person.
+            Select the crime that matches this person. Already matched crimes show the assigned mugshot.
           </DialogDescription>
         </DialogHeader>
         
+        {/* Selected Mugshot Display */}
         <div className="my-4 flex justify-center">
           <div className="relative">
             <Image 
               src={selectedMugshot.image} 
               alt={selectedMugshot.name} 
-              width={128}
-              height={128}
-              className="h-32 w-32 rounded-xl object-cover border-2 border-blue-500 shadow-lg"
+              width={96}
+              height={96}
+              className="h-24 w-24 rounded-xl object-cover border-2 border-blue-500 shadow-lg"
             />
             <div className="absolute -top-2 -right-2 bg-blue-500 rounded-full p-1">
               <Star className="h-4 w-4 text-white" />
@@ -230,31 +243,95 @@ function CrimeSelectionModal({
           </div>
         </div>
         
-        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2">
-          {availableCrimes.length > 0 ? (
-            availableCrimes.map((crimeDesc) => (
+        {/* Crimes List with Match Context */}
+        <div className="max-h-[50vh] overflow-y-auto space-y-3 pr-2">
+          {allCrimes.map((crime) => {
+            const matchedMugshotId = matches[crime.id.toString()]
+            const matchedMugshot = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null
+            const isCurrentMatch = matchedMugshotId === selectedMugshot.id.toString()
+            const isAlreadyMatched = matchedMugshotId && !isCurrentMatch
+            
+            return (
               <Button
-                key={crimeDesc.id}
+                key={crime.id}
                 variant="outline"
-                className="w-full justify-start text-left h-auto py-3 px-4 border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-blue-300 transition-colors duration-200 rounded-lg"
-                onClick={() => handleCrimeSelect(crimeDesc.id.toString())}
+                disabled={!!isAlreadyMatched}
+                className={cn(
+                  "w-full justify-start text-left h-auto py-4 px-4 transition-all duration-200 rounded-lg",
+                  isCurrentMatch 
+                    ? "border-blue-500 bg-blue-950/40 text-blue-200 ring-2 ring-blue-500/30" 
+                    : isAlreadyMatched
+                    ? "border-gray-500 bg-gray-800/50 text-gray-500 opacity-60 cursor-not-allowed"
+                    : "border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-blue-300 bg-white"
+                )}
+                onClick={() => handleCrimeSelect(crime.id.toString())}
               >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 p-1 rounded-full bg-gray-100">
-                    <AlertCircle className="h-3 w-3 text-gray-500" />
+                <div className="flex items-start gap-3 w-full">
+                  {/* Crime Icon */}
+                  <div className={cn(
+                    "mt-1 p-2 rounded-full",
+                    isCurrentMatch 
+                      ? "bg-blue-500" 
+                      : isAlreadyMatched 
+                      ? "bg-gray-600" 
+                      : "bg-gray-100"
+                  )}>
+                    <AlertCircle className={cn(
+                      "h-4 w-4",
+                      isCurrentMatch 
+                        ? "text-white" 
+                        : isAlreadyMatched 
+                        ? "text-gray-400" 
+                        : "text-gray-500"
+                    )} />
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm leading-relaxed">{crimeDesc.crime || "Unknown Crime"}</span>
+                  
+                  {/* Crime Text */}
+                  <div className="flex-1 min-w-0">
+                    <p className={cn(
+                      "text-sm leading-relaxed",
+                      isCurrentMatch ? "text-blue-200" : isAlreadyMatched ? "text-gray-500" : "text-gray-700"
+                    )}>
+                      {crime.crime || "Unknown Crime"}
+                    </p>
                   </div>
+                  
+                  {/* Matched Mugshot Display */}
+                  {matchedMugshot && (
+                    <div className="flex items-center gap-2 ml-2">
+                      <Image
+                        src={matchedMugshot.image}
+                        alt={matchedMugshot.name}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-lg object-cover border border-gray-300"
+                      />
+                      <div className="text-xs">
+                        <p className={cn(
+                          "font-medium",
+                          isCurrentMatch ? "text-blue-300" : "text-gray-600"
+                        )}>
+                          {matchedMugshot.name}
+                        </p>
+                        {isCurrentMatch && (
+                          <p className="text-blue-400 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Current
+                          </p>
+                        )}
+                        {isAlreadyMatched && (
+                          <p className="text-gray-500 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Matched
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Button>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">No available crimes to match.</p>
-            </div>
-          )}
+            )
+          })}
         </div>
         
         <DialogFooter className="mt-4">
@@ -280,22 +357,8 @@ export default function MugshotMatchingGame() {
   const { triggerHaptic } = useHapticFeedback()
   const { touchTargetProps } = useTouchTarget()
   
-  // Swipe gesture support for mobile navigation
-  const [currentMugshotIndex, setCurrentMugshotIndex] = useState(0)
-  const { touchProps: swipeProps } = useSwipeGesture({
-    onSwipeLeft: () => {
-      if (isMobile && currentMugshotIndex < shuffledMugshotImages.length - 1) {
-        setCurrentMugshotIndex(prev => prev + 1)
-        triggerHaptic('light')
-      }
-    },
-    onSwipeRight: () => {
-      if (isMobile && currentMugshotIndex > 0) {
-        setCurrentMugshotIndex(prev => prev - 1)
-        triggerHaptic('light')
-      }
-    }
-  })
+  // Mobile-specific state for new workflow
+  const [selectedMugshotForMobile, setSelectedMugshotForMobile] = useState<Inmate | null>(null)
 
   const [inmates, setInmates] = useState<Inmate[]>([])
   const [shuffledMugshotImages, setShuffledMugshotImages] = useState<Inmate[]>([])
@@ -684,7 +747,7 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  // Enhanced Selectable Mugshot Component with Mobile Improvements
+  // Enhanced Selectable Mugshot Component for new mobile workflow
   function SelectableMugshot({ mugshot, index }: { mugshot: Inmate; index: number }) {
     const isMatched = Object.values(matches).includes(mugshot.id.toString());
     const isSelected = selectedMugshotId === mugshot.id.toString();
@@ -694,56 +757,19 @@ export default function MugshotMatchingGame() {
       // Haptic feedback for selection
       triggerHaptic('light');
       
-      setSelectedMugshotId(mugshot.id.toString());
-      
       // Flash effect when selecting
       setIsFlashing(true);
       setTimeout(() => setIsFlashing(false), 600);
       
-      if (shouldUseModalUX) {
+      if (isMobile) {
+        // New mobile workflow: Open enhanced modal with all crimes
+        setSelectedMugshotForMobile(mugshot);
         setIsCrimeModalOpen(true);
-      }
-    };
-
-    // Mobile drag and drop functionality
-    const handleDrop = (item: Inmate, targetElement: Element | null) => {
-      if (!targetElement || !isMobile) return;
-      
-      // Find if target is a crime description card
-      const crimeCard = targetElement.closest('[data-crime-id]');
-      if (crimeCard) {
-        const crimeId = crimeCard.getAttribute('data-crime-id');
-        if (crimeId) {
-          // Haptic feedback for successful drop
-          triggerHaptic('success');
-          
-          // Track attempt count
-          setAttemptCounts(prev => ({
-            ...prev,
-            [crimeId]: (prev[crimeId] || 0) + 1
-          }));
-
-          // Update matches
-          setMatches((prev) => {
-            const newMatches = { ...prev };
-            // Remove previous assignment if any
-            Object.keys(newMatches).forEach(key => {
-              if (newMatches[key] === mugshot.id.toString()) {
-                newMatches[key] = null;
-              }
-            });
-            // Assign new match
-            newMatches[crimeId] = mugshot.id.toString();
-            return newMatches;
-          });
-        }
       } else {
-        // Haptic feedback for invalid drop
-        triggerHaptic('warning');
+        // Desktop workflow remains the same
+        setSelectedMugshotId(mugshot.id.toString());
       }
     };
-
-    const { dragProps, isDragging } = useMobileDragDrop(mugshot, handleDrop);
 
     return (
       <motion.div
@@ -752,15 +778,12 @@ export default function MugshotMatchingGame() {
         transition={!hasInitiallyLoaded ? { delay: index * 0.1, duration: 0.5 } : { duration: 0 }}
         className={cn(
           "cursor-pointer group relative",
-          isMobile && "min-h-[88px] min-w-[88px]", // Better touch targets for mobile
-          isDragging && "z-50",
           touchTargetProps.className
         )}
         onClick={handleMugshotClick}
         whileHover={{ y: -4 }}
         whileTap={{ scale: 0.98 }}
         style={touchTargetProps.style}
-        {...(isMobile ? dragProps : {})} // Apply drag props only on mobile
       >
         <motion.div
           className={cn(
@@ -1188,7 +1211,6 @@ export default function MugshotMatchingGame() {
             animate={{ opacity: 1, x: 0 }}
             transition={animationsEnabled ? { duration: 0.6 } : { duration: 0 }}
             className="space-y-6"
-            {...(isMobile ? swipeProps : {})} // Add swipe support for mobile
           >
             <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
               <motion.div 
@@ -1200,106 +1222,25 @@ export default function MugshotMatchingGame() {
                 <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
                 <h2 className="text-xl font-bold text-gray-100">Mugshots</h2>
                 <span className="text-sm text-gray-400 ml-2">
-                  {isMobile ? "Tap to select or drag to match" : "Click a mugshot to select them"}
+                  {isMobile ? "Tap a mugshot to match with crimes" : "Click a mugshot to select them"}
                 </span>
               </motion.div>
-              {/* Mobile navigation controls */}
-              {isMobile && shuffledMugshotImages.length > 1 && (
-                <div className="flex items-center justify-between mt-2">
-                                     <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => {
-                       if (currentMugshotIndex > 0) {
-                         setCurrentMugshotIndex(prev => prev - 1)
-                         triggerHaptic('light')
-                       }
-                     }}
-                     disabled={currentMugshotIndex === 0}
-                     className={cn(
-                       "flex items-center gap-1 bg-gray-800 border-gray-600 text-gray-300",
-                       touchTargetProps.className
-                     )}
-                     style={touchTargetProps.style}
-                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    Prev
-                  </Button>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">
-                      {currentMugshotIndex + 1} of {shuffledMugshotImages.length}
-                    </span>
-                    <div className="flex gap-1">
-                      {shuffledMugshotImages.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setCurrentMugshotIndex(index)
-                            triggerHaptic('light')
-                          }}
-                                                     className={cn(
-                             "w-3 h-3 rounded-full transition-colors",
-                             index === currentMugshotIndex ? "bg-blue-400" : "bg-gray-600",
-                             touchTargetProps.className
-                           )}
-                           style={touchTargetProps.style}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                                     <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => {
-                       if (currentMugshotIndex < shuffledMugshotImages.length - 1) {
-                         setCurrentMugshotIndex(prev => prev + 1)
-                         triggerHaptic('light')
-                       }
-                     }}
-                     disabled={currentMugshotIndex === shuffledMugshotImages.length - 1}
-                     className={cn(
-                       "flex items-center gap-1 bg-gray-800 border-gray-600 text-gray-300",
-                       touchTargetProps.className
-                     )}
-                     style={touchTargetProps.style}
-                   >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
             </div>
+            
+            {/* New 3x2 Mobile Grid Layout */}
             <motion.div 
               className={cn(
                 isMobile 
-                  ? "flex overflow-x-hidden" // Mobile: horizontal scroll
-                  : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4" // Desktop: grid
+                  ? "grid grid-cols-3 gap-3" // Mobile: 3x2 grid
+                  : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4" // Desktop: responsive grid
               )}
               initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               transition={animationsEnabled ? { delay: 0.4, duration: 0.8 } : { duration: 0 }}
             >
-              {isMobile ? (
-                // Mobile: Show one mugshot at a time with swipe navigation
-                <div className="w-full flex justify-center">
-                  {shuffledMugshotImages[currentMugshotIndex] && (
-                    <div className="w-full max-w-sm">
-                      <SelectableMugshot 
-                        key={shuffledMugshotImages[currentMugshotIndex].id} 
-                        mugshot={shuffledMugshotImages[currentMugshotIndex]} 
-                        index={currentMugshotIndex} 
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Desktop: Show all mugshots in grid
-                shuffledMugshotImages.map((mugshot, index) => (
-                  <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
-                ))
-              )}
+              {shuffledMugshotImages.map((mugshot, index) => (
+                <SelectableMugshot key={mugshot.id} mugshot={mugshot} index={index} />
+              ))}
             </motion.div>
           </motion.div>
 
@@ -1347,17 +1288,58 @@ export default function MugshotMatchingGame() {
           </motion.div>
         </div>
 
-        {/* Crime Selection Modal */}
-        {shouldUseModalUX && selectedMugshotId && getInmateDataById(selectedMugshotId) && (
-          <CrimeSelectionModal
+        {/* Enhanced Mobile Crime Selection Modal */}
+        {isMobile && selectedMugshotForMobile && (
+          <MobileCrimeSelectionModal
+            isOpen={isCrimeModalOpen}
+            onClose={() => {
+              setIsCrimeModalOpen(false);
+              setSelectedMugshotForMobile(null);
+            }}
+            selectedMugshot={selectedMugshotForMobile}
+            allCrimes={shuffledCrimeDescriptions}
+            matches={matches}
+            getInmateDataById={getInmateDataById}
+            onCrimeSelect={(crimeId: string) => {
+              // Track attempt count
+              setAttemptCounts(prev => ({
+                ...prev,
+                [crimeId]: (prev[crimeId] || 0) + 1
+              }));
+
+              // Update matches
+              setMatches((prev) => {
+                const newMatches = { ...prev };
+                // Remove previous assignment if any
+                Object.keys(newMatches).forEach(key => {
+                  if (newMatches[key] === selectedMugshotForMobile.id.toString()) {
+                    newMatches[key] = null;
+                  }
+                });
+                // Assign new match
+                newMatches[crimeId] = selectedMugshotForMobile.id.toString();
+                return newMatches;
+              });
+
+              setIsCrimeModalOpen(false);
+              setSelectedMugshotForMobile(null);
+            }}
+          />
+        )}
+
+        {/* Desktop Crime Selection Modal (keep existing for desktop) */}
+        {!isMobile && selectedMugshotId && getInmateDataById(selectedMugshotId) && (
+          <MobileCrimeSelectionModal
             isOpen={isCrimeModalOpen}
             onClose={() => setIsCrimeModalOpen(false)}
-            selectedMugshot={getInmateDataById(selectedMugshotId)!} 
-            availableCrimes={shuffledCrimeDescriptions.filter(
+            selectedMugshot={getInmateDataById(selectedMugshotId)!}
+            allCrimes={shuffledCrimeDescriptions.filter(
               (desc) => !matches[desc.id.toString()]
             )}
-            onCrimeSelect={(descriptionId) => {
-              setSelectedDescriptionId(descriptionId);
+            matches={matches}
+            getInmateDataById={getInmateDataById}
+            onCrimeSelect={(crimeId: string) => {
+              setSelectedDescriptionId(crimeId);
               setIsCrimeModalOpen(false);
             }}
           />

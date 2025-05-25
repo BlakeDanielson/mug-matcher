@@ -35,7 +35,7 @@ export function ParticleExplosion({
   intensity = 'medium'
 }: ParticleExplosionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
   const particlesRef = useRef<ExplosionParticle[]>([])
 
   const intensitySettings = {
