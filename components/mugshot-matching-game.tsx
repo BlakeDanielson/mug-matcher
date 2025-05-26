@@ -8,14 +8,12 @@ import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy, Timer, Star, Target, ChevronLeft, ChevronRight } from "lucide-react"
+import { CheckCircle2, XCircle, ArrowRightLeft, RefreshCw, AlertCircle, Trophy, Timer, Star, Target } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useToast } from "@/hooks/use-toast"
 import { 
   useHapticFeedback, 
-  useMobileDragDrop, 
-  useSwipeGesture, 
   useTouchTarget 
 } from "@/hooks/use-mobile-interactions"
 import { AdBanner } from "@/components/ui/ad-banner"
@@ -1456,7 +1454,7 @@ export default function MugshotMatchingGame() {
               <div className="mt-8">
                 <h3 className="text-xl font-bold text-gray-100 mb-6 text-center">Detailed Results</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {results.detailedResults.map((result, index) => (
+                  {results.detailedResults.map((result) => (
                     <div
                       key={result.mugshotId}
                       className={cn(
@@ -1469,9 +1467,11 @@ export default function MugshotMatchingGame() {
                       <div className="flex items-start gap-4">
                         {/* Mugshot Image */}
                         <div className="relative">
-                          <img
+                          <Image
                             src={result.mugshotImage}
                             alt={result.mugshotName}
+                            width={80}
+                            height={80}
                             className="w-20 h-20 rounded-lg object-cover border-2 border-gray-600"
                           />
                           <div className={cn(
