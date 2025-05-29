@@ -45,28 +45,28 @@ interface Inmate {
 // Clean Loading Component
 function GameSkeleton() {
   return (
-    <div className="flex justify-center items-center min-h-screen p-6">
-      <div className="w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center mb-6">
+    <div className="flex justify-center items-center min-h-screen p-8 lg:p-12">
+      <div className="w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl p-10 lg:p-12 shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-8">
           <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
           <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
         </div>
         
-        <div className="h-12 w-80 bg-gray-200 dark:bg-gray-700 rounded mx-auto mb-8 animate-pulse" />
+        <div className="h-12 w-80 bg-gray-200 dark:bg-gray-700 rounded mx-auto mb-12 animate-pulse" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="space-y-6">
             <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
               ))}
             </div>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-            <div className="space-y-3">
+            <div className="space-y-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
               ))}
@@ -81,11 +81,11 @@ function GameSkeleton() {
 // Clean Error Component
 function GameError({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="flex justify-center items-center min-h-screen p-6">
-      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700 text-center">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Game Loading Error</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+    <div className="flex justify-center items-center min-h-screen p-8 lg:p-12">
+      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl p-10 shadow-lg border border-gray-200 dark:border-gray-700 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-6" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Game Loading Error</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">{error}</p>
         <Button onClick={onRetry} className="w-full">
           <RefreshCw className="mr-2 h-4 w-4" />
           Try Again
@@ -126,18 +126,18 @@ function GameStats({
   // const accuracy = totalMatches > 0 ? Math.round((correctMatches / totalMatches) * 100) : 0
   
   return (
-    <div className="flex items-center gap-4 mb-6">
-      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+    <div className="flex items-center gap-6 mb-8">
+      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 rounded-lg">
         <Star className="h-4 w-4 text-blue-600" />
         <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{formatPoints(currentPoints)}</span>
       </div>
       
-      <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
+      <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 rounded-lg">
         <Trophy className="h-4 w-4 text-amber-600" />
         <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{formatPoints(highScore)}</span>
       </div>
       
-      <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg">
+      <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-3 rounded-lg">
         <Timer className="h-4 w-4 text-gray-600 dark:text-gray-400" />
         <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
           {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
@@ -213,7 +213,7 @@ function CleanMugshotCard({
         />
         
         {/* Name overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-center py-2 px-3">
+        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-center py-3 px-4">
           <div className="text-sm font-medium truncate">{mugshot.name}</div>
         </div>
 
@@ -365,7 +365,7 @@ function CleanCrimeCard({
        whileHover={{ scale: 1.01 }}
        whileTap={{ scale: 0.99 }}
        className={cn(
-         "p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-md",
+         "p-6 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-md",
          isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
          isMatched && !isSelected && "border-green-500 bg-green-50 dark:bg-green-900/20",
          !isSelected && !isMatched && "border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800",
@@ -373,14 +373,14 @@ function CleanCrimeCard({
        )}
        style={touchTargetProps.style}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900 dark:text-white leading-relaxed">
             {processedCrime || "Unknown crime"}
           </p>
           
           {matchedMugshot && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-3">
               <Image
                 src={matchedMugshot.image}
                 alt={matchedMugshot.name}
@@ -417,7 +417,7 @@ function CleanCrimeCard({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "mt-3 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+              "mt-4 px-4 py-2 rounded-full text-xs font-medium flex items-center gap-2",
               results.correctMatches.includes(crime.id)
                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
@@ -807,15 +807,15 @@ export default function CleanAceternityMugshotGame() {
   const correctMatches = Object.entries(matches).filter(([key, value]) => value === key).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8 lg:p-12">
       <div className="w-full max-w-7xl mx-auto">
-        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
+        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-10 lg:p-12 shadow-xl border border-gray-200 dark:border-gray-700">
           
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-12">
             <TextGenerateEffect
               words="Mugshot Matching Game"
-              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4"
+              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-8"
               duration={0.5}
             />
             
@@ -830,8 +830,8 @@ export default function CleanAceternityMugshotGame() {
             )}
             
             {!results?.submitted && (
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <div className="mt-6">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                   <span>Progress</span>
                   <span>{totalMatches}/6</span>
                 </div>
@@ -841,10 +841,10 @@ export default function CleanAceternityMugshotGame() {
           </div>
 
           {/* Game Board */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
             {/* Mugshots Section */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="space-y-8">
+              <div className="flex items-center gap-3 p-5 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="w-3 h-3 bg-red-500 rounded-full" />
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Suspects</h2>
                 <Badge variant="secondary" className="text-xs">
@@ -852,7 +852,7 @@ export default function CleanAceternityMugshotGame() {
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {shuffledMugshotImages.map((mugshot, index) => (
                   <CleanMugshotCard
                     key={mugshot.id}
@@ -877,8 +877,8 @@ export default function CleanAceternityMugshotGame() {
             </div>
 
             {/* Crime Descriptions Section */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="space-y-8">
+              <div className="flex items-center gap-3 p-5 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="w-3 h-3 bg-blue-500 rounded-full" />
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Crimes</h2>
                 <Badge variant="secondary" className="text-xs">
@@ -886,7 +886,7 @@ export default function CleanAceternityMugshotGame() {
                 </Badge>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {shuffledCrimeDescriptions.map((description, index) => {
                   const matchedMugshotId = matches[description.id.toString()];
                   const matchedMugshot = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
@@ -915,13 +915,13 @@ export default function CleanAceternityMugshotGame() {
           {/* Results Section */}
           {results?.submitted && (
             <motion.div 
-              className="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl"
+              className="mb-12 p-8 bg-gray-50 dark:bg-gray-800 rounded-xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Game Results</h2>
-                <div className="flex justify-center gap-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Game Results</h2>
+                <div className="flex justify-center gap-8">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-blue-600">{results.score}/{results.total}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Score</div>
@@ -940,7 +940,7 @@ export default function CleanAceternityMugshotGame() {
               </div>
               
               <div className="text-center">
-                <div className="p-3 bg-white dark:bg-gray-700 rounded-lg inline-block">
+                <div className="p-4 bg-white dark:bg-gray-700 rounded-lg inline-block">
                   <p className="text-gray-600 dark:text-gray-400 text-sm">Total Score</p>
                   <p className="text-2xl font-bold text-blue-600">{formatPoints(currentPoints)}</p>
                 </div>
@@ -956,7 +956,7 @@ export default function CleanAceternityMugshotGame() {
                 disabled={totalMatches < 6}
                 size="lg"
                 className={cn(
-                  "px-8 py-3 text-lg font-semibold",
+                  "px-10 py-4 text-lg font-semibold",
                   totalMatches < 6 && "opacity-50 cursor-not-allowed"
                 )}
               >
@@ -976,7 +976,7 @@ export default function CleanAceternityMugshotGame() {
               <Button
                 onClick={() => resetGame()}
                 size="lg"
-                className="px-8 py-3 text-lg font-semibold"
+                className="px-10 py-4 text-lg font-semibold"
               >
                 Play Again
                 <RefreshCw className="ml-2 h-5 w-5" />

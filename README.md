@@ -58,7 +58,7 @@ The Buy Me A Coffee components support various customization options:
 
 ```tsx
 <BuyMeCoffee 
-  username="yourusername"
+  username="blvke"
   message="Custom message for supporters"
   description="Support description"
   color="#FFDD00"

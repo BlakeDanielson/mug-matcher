@@ -55,7 +55,6 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <Toaster />
-        {/* Buy Me A Coffee Widget - Replace 'yourusername' with your actual username */}
         <BuyMeCoffee 
           username={process.env.NEXT_PUBLIC_BUYMEACOFFEE_USERNAME || "blvke"}
           message="Thank you for playing Mugshot Matching Game! If you enjoyed it, consider buying me a coffee! ☕"
