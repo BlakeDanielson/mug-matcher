@@ -4,6 +4,7 @@ import "@/styles/custom.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Toaster } from "@/components/ui/toaster"
+import { BuyMeCoffee } from "@/components/ui/buy-me-coffee"
 import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -54,6 +55,16 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <Toaster />
+        {/* Buy Me A Coffee Widget - Replace 'yourusername' with your actual username */}
+        <BuyMeCoffee 
+          username="yourusername"
+          message="Thank you for playing Mugshot Matching Game! If you enjoyed it, consider buying me a coffee! ☕"
+          description="Support the developer!"
+          color="#FFDD00"
+          position="right"
+          xMargin={18}
+          yMargin={18}
+        />
       </body>
     </html>
   )

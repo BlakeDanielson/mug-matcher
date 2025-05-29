@@ -1,4 +1,3 @@
-
 # Mugshot Matcher
 
 A challenging web-based game where players test their detective skills by matching mugshots to their corresponding crimes. This interactive experience combines visual recognition with criminal justice knowledge, creating an engaging way to learn about law enforcement and criminal profiling. Built with [Next.js](https://nextjs.org) and bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
@@ -23,6 +22,52 @@ Test your detective skills by matching mugshots to crimes. Each round presents y
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Buy Me A Coffee Integration
+
+This project includes Buy Me A Coffee integration to support the developer. The integration includes both a floating widget and inline buttons.
+
+### Configuration
+
+To configure Buy Me A Coffee for your project:
+
+1. **Set up your Buy Me A Coffee account** at [buymeacoffee.com](https://www.buymeacoffee.com)
+
+2. **Update the username** in the following files:
+   - `app/layout.tsx` - Update the `username` prop in the `BuyMeCoffee` component
+   - `app/page.tsx` - Update the `username` prop in the `BuyMeCoffeeButton` component
+
+3. **Optional: Use environment variables** (recommended for production):
+   ```bash
+   # Add to your .env.local file
+   NEXT_PUBLIC_BUYMEACOFFEE_USERNAME=yourusername
+   ```
+
+   Then update the components to use the environment variable:
+   ```tsx
+   username={process.env.NEXT_PUBLIC_BUYMEACOFFEE_USERNAME || "yourusername"}
+   ```
+
+### Components Available
+
+- **`BuyMeCoffee`** - Floating widget that appears on the side of the page
+- **`BuyMeCoffeeButton`** - Inline button component for custom placement
+
+### Customization
+
+The Buy Me A Coffee components support various customization options:
+
+```tsx
+<BuyMeCoffee 
+  username="yourusername"
+  message="Custom message for supporters"
+  description="Support description"
+  color="#FFDD00"
+  position="right" // or "left"
+  xMargin={18}
+  yMargin={18}
+/>
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -46,6 +91,12 @@ cp .env.example .env.local
 |----------|-------------|---------|
 | MUGSHOTS_CSV_PATH | Path to the CSV file containing mugshot data | `../mugshotscripts/sorted_mugshots.csv` (local) or `./data/sorted_mugshots.csv` (Render) |
 | NODE_ENV | Node environment | `development`, `production`, or `test` |
+
+### Optional Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| NEXT_PUBLIC_BUYMEACOFFEE_USERNAME | Your Buy Me A Coffee username | `yourusername` |
 
 ## Deployment
 

@@ -1,5 +1,6 @@
 import MugshotMatchingGame from "@/components/mugshot-matching-game"
 import { GameLayoutWithAds } from "@/components/ui/game-layout-with-ads"
+import { BuyMeCoffeeButton } from "@/components/ui/buy-me-coffee"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +45,18 @@ export default function Home() {
         </div>
 
         <MugshotMatchingGame />
+        
+        {/* Buy Me A Coffee Section */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-400 text-sm mb-4">
+            Enjoying the game? Support the developer!
+          </p>
+          <BuyMeCoffeeButton 
+            username="yourusername" 
+            text="Buy me a coffee ☕"
+            className="mx-auto"
+          />
+        </div>
       </main>
     </GameLayoutWithAds>
   )
