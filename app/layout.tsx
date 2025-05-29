@@ -57,7 +57,7 @@ export default function RootLayout({
         <Toaster />
         {/* Buy Me A Coffee Widget - Replace 'yourusername' with your actual username */}
         <BuyMeCoffee 
-          username="yourusername"
+          username={process.env.NEXT_PUBLIC_BUYMEACOFFEE_USERNAME || "blvke"}
           message="Thank you for playing Mugshot Matching Game! If you enjoyed it, consider buying me a coffee! ☕"
           description="Support the developer!"
           color="#FFDD00"

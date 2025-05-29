@@ -52,7 +52,7 @@ export default function Home() {
             Enjoying the game? Support the developer!
           </p>
           <BuyMeCoffeeButton 
-            username="yourusername" 
+            username={process.env.NEXT_PUBLIC_BUYMEACOFFEE_USERNAME || "blvke"} 
             text="Buy me a coffee ☕"
             className="mx-auto"
           />
