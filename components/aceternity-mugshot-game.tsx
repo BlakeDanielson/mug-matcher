@@ -197,8 +197,7 @@ function CleanMugshotCard({
     >
       <div className={cn(
         "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-sm hover:shadow-md",
-        isSelected && "border-blue-500 ring-2 ring-blue-200 shadow-lg",
-        isMatched && !isSelected && "border-green-500 ring-2 ring-green-200",
+        (isSelected || isMatched) && "border-blue-500 ring-2 ring-blue-200 shadow-lg",
         !isSelected && !isMatched && "border-gray-200 dark:border-gray-700 hover:border-gray-300"
       )}>
         <Image
@@ -217,9 +216,9 @@ function CleanMugshotCard({
           <div className="text-sm font-medium truncate">{mugshot.name}</div>
         </div>
 
-        {/* Status indicators */}
+        {/* Status indicators - use blue for both selected and matched */}
         <AnimatePresence>
-          {isSelected && (
+          {(isSelected || isMatched) && (
             <motion.div 
               className="absolute top-2 right-2 bg-blue-500 rounded-full p-1.5 shadow-lg"
               initial={{ scale: 0 }}
@@ -227,17 +226,6 @@ function CleanMugshotCard({
               exit={{ scale: 0 }}
             >
               <Star className="h-3 w-3 text-white" />
-            </motion.div>
-          )}
-          
-          {isMatched && !isSelected && (
-            <motion.div 
-              className="absolute top-2 right-2 bg-green-500 rounded-full p-1.5 shadow-lg"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-            >
-              <CheckCircle2 className="h-3 w-3 text-white" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -367,7 +355,7 @@ function CleanCrimeCard({
        className={cn(
          "p-6 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-md",
          isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
-         isMatched && !isSelected && "border-green-500 bg-green-50 dark:bg-green-900/20",
+         isMatched && !isSelected && "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
          !isSelected && !isMatched && "border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800",
          touchTargetProps.className
        )}
@@ -388,7 +376,7 @@ function CleanCrimeCard({
                 height={24}
                 className="h-6 w-6 rounded-full object-cover"
               />
-              <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                 {matchedMugshot.name}
               </span>
             </div>
@@ -403,8 +391,8 @@ function CleanCrimeCard({
           )}
           
           {isMatched && !isSelected && (
-            <div className="bg-green-500 rounded-full p-1">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+            <div className="bg-blue-500 rounded-full p-1">
+              <Star className="h-3 w-3 text-white" />
             </div>
           )}
         </div>
@@ -521,7 +509,7 @@ function CleanMobileCrimeModal({
                         height={32}
                         className="h-8 w-8 rounded object-cover"
                       />
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="text-xs text-blue-600 dark:text-blue-400">
                         {matchedMugshot.name}
                       </span>
                     </div>
