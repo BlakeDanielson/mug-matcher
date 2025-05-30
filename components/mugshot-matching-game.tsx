@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -15,8 +15,7 @@ import {
   useHapticFeedback, 
   useTouchTarget 
 } from "@/hooks/use-mobile-interactions"
-import { AdBanner } from "@/components/ui/ad-banner"
-import { InterRoundAdModal } from "@/components/ui/inter-round-ad-modal"
+import { InterRoundModal } from "@/components/ui/inter-round-modal"
 
 import {
   Dialog,
@@ -795,9 +794,8 @@ export default function MugshotMatchingGame() {
           className={cn(
             "relative rounded-xl overflow-hidden border-2 aspect-square shadow-lg",
             "bg-gray-800/50 transition-all duration-300",
-            // Selection takes priority over matching for visual clarity
-            isSelected && "border-blue-500 ring-4 ring-blue-200/50",
-            isMatched && !isSelected && !results?.submitted && "border-green-500 ring-4 ring-green-200/50",
+            // Keep matched inmates purple/blue instead of green
+            (isSelected || isMatched) && !results?.submitted && "border-blue-500 ring-4 ring-blue-200/50",
             !isSelected && !isMatched && "border-gray-600",
             results?.submitted && !Object.entries(matches).some(([descriptionId, matchedImageId]) =>
               matchedImageId === mugshot.id.toString() && descriptionId === mugshot.id.toString()
@@ -805,7 +803,7 @@ export default function MugshotMatchingGame() {
           )}
           animate={{
             scale: isFlashing ? [1, 1.05, 1] : 1,
-            boxShadow: isSelected 
+            boxShadow: (isSelected || isMatched) && !results?.submitted
               ? "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" 
               : "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
           }}
@@ -833,9 +831,9 @@ export default function MugshotMatchingGame() {
             </div>
           </div>
 
-          {/* Selection indicator with animation */}
+          {/* Selection/Match indicator with animation - use blue for both selected and matched */}
           <AnimatePresence>
-            {isSelected && !results?.submitted && (
+            {(isSelected || isMatched) && !results?.submitted && (
               <motion.div 
                 className="absolute top-3 right-3"
                 initial={{ scale: 0, rotate: -180 }}
@@ -855,33 +853,6 @@ export default function MugshotMatchingGame() {
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
                   <Star className="h-4 w-4 text-white" />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Match indicator with animation - only show when matched but not selected */}
-          <AnimatePresence>
-            {isMatched && !isSelected && !results?.submitted && (
-              <motion.div 
-                className="absolute top-3 right-3"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 180 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <motion.div 
-                  className="bg-green-500 rounded-full p-2 shadow-lg"
-                  animate={{ 
-                    boxShadow: [
-                      "0 0 0 0 rgba(34, 197, 94, 0.7)",
-                      "0 0 0 10px rgba(34, 197, 94, 0)",
-                      "0 0 0 0 rgba(34, 197, 94, 0)"
-                    ]
-                  }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <CheckCircle2 className="h-4 w-4 text-white" />
                 </motion.div>
               </motion.div>
             )}
@@ -951,26 +922,6 @@ export default function MugshotMatchingGame() {
     const matchedMugshotData = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null;
     const isSelectedForDesktopUX = !shouldUseModalUX && selectedDescriptionId === description.id.toString();
 
-    // Get crime severity for styling
-    const getCrimeSeverity = (crime: string) => {
-      const lowercaseCrime = crime.toLowerCase();
-      
-      if (lowercaseCrime.includes('murder') || lowercaseCrime.includes('homicide') || lowercaseCrime.includes('killing') || lowercaseCrime.includes('death')) {
-        return 'high';
-      }
-      if (lowercaseCrime.includes('assault') || lowercaseCrime.includes('robbery') || lowercaseCrime.includes('sexual') || lowercaseCrime.includes('battery')) {
-        return 'medium';
-      }
-      return 'low';
-    };
-
-    const severity = getCrimeSeverity(processedCrime || '');
-    const severityColors = {
-      high: { border: 'border-red-500/60', bg: 'bg-red-950/30', text: 'text-red-400', icon: 'bg-red-500' },
-      medium: { border: 'border-orange-500/60', bg: 'bg-orange-950/30', text: 'text-orange-400', icon: 'bg-orange-500' },
-      low: { border: 'border-yellow-500/60', bg: 'bg-yellow-950/30', text: 'text-yellow-400', icon: 'bg-yellow-500' }
-    };
-
     const handleCrimeClick = () => {
       if (!shouldUseModalUX) {
         // Haptic feedback for selection
@@ -990,7 +941,7 @@ export default function MugshotMatchingGame() {
           !shouldUseModalUX && "cursor-pointer transform",
           // Balanced height to match total mugshot section height
           isMobile ? "min-h-[140px]" : "min-h-[160px]", 
-          // Selection takes priority over matching for visual clarity
+          // Selection takes priority over matching for visual clarity - use blue for selection
           isSelectedForDesktopUX 
             ? "border-blue-500 ring-4 ring-blue-500/30 bg-blue-950/40"
             : results?.submitted && results.correctMatches.includes(description.id)
@@ -998,8 +949,8 @@ export default function MugshotMatchingGame() {
               : results?.submitted
                 ? "border-red-500 bg-red-950/40 ring-2 ring-red-500/30"
                 : matchedMugshotData && !isSelectedForDesktopUX
-                  ? "border-green-500 bg-green-950/40 ring-2 ring-green-500/30"
-                  : `${severityColors[severity].border} ${severityColors[severity].bg} hover:border-gray-400`,
+                  ? "border-blue-500 bg-blue-950/40 ring-2 ring-blue-500/30"
+                  : "border-gray-600 bg-gray-800/60 hover:border-gray-400",
           touchTargetProps.className
         )}
         style={touchTargetProps.style}
@@ -1010,20 +961,20 @@ export default function MugshotMatchingGame() {
         
         {/* Main content */}
         <div className="relative z-10">
-          {/* Compact header with icon and severity */}
+          {/* Compact header with matched mugshot or empty space */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              {matchedMugshotData ? (
+              {matchedMugshotData && (
                 <div className="relative w-8 h-8 flex-shrink-0">
                   <Image 
                     src={matchedMugshotData.image} 
                     alt={matchedMugshotData.name} 
                     width={32}
                     height={32}
-                    className="h-8 w-8 rounded-full object-cover border-2 border-green-500 shadow-md"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-blue-500 shadow-md"
                   />
                   <motion.div 
-                    className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 shadow-md"
+                    className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-0.5 shadow-md"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 300 }}
@@ -1031,28 +982,7 @@ export default function MugshotMatchingGame() {
                     <CheckCircle2 className="h-3 w-3 text-white" />
                   </motion.div>
                 </div>
-              ) : (
-                <div className={cn(
-                  "w-8 h-8 flex items-center justify-center rounded-full border shadow-md flex-shrink-0",
-                  severityColors[severity].icon,
-                  "border-white/20"
-                )}>
-                  <AlertCircle className="h-4 w-4 text-white" />
-                </div>
               )}
-              
-              {/* Compact severity badge */}
-              <Badge 
-                variant="outline" 
-                className={cn(
-                  "border-0 text-xs font-medium px-1.5 py-0.5",
-                  severity === 'high' && "bg-red-500/20 text-red-300",
-                  severity === 'medium' && "bg-orange-500/20 text-orange-300",
-                  severity === 'low' && "bg-yellow-500/20 text-yellow-300"
-                )}
-              >
-                {severity.toUpperCase()}
-              </Badge>
             </div>
 
             {/* Status indicator */}
@@ -1080,7 +1010,7 @@ export default function MugshotMatchingGame() {
           <div className="mb-2">
             <p className={cn(
               "text-sm font-medium leading-snug",
-              matchedMugshotData ? "text-green-200" : "text-gray-100"
+              matchedMugshotData ? "text-blue-200" : "text-gray-100"
             )}>
               {processedCrime || "Unknown crime"}
             </p>
@@ -1102,10 +1032,10 @@ export default function MugshotMatchingGame() {
               </div>
             ) : matchedMugshotData ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-green-200 truncate">{matchedMugshotData.name}</span>
+                <span className="text-sm font-medium text-blue-200 truncate">{matchedMugshotData.name}</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-green-400 font-medium">MATCHED</span>
+                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-blue-400 font-medium">MATCHED</span>
                 </div>
               </div>
             ) : (
@@ -1148,7 +1078,7 @@ export default function MugshotMatchingGame() {
         <AnimatePresence>
           {matchedMugshotData && !isSelectedForDesktopUX && !results?.submitted && (
             <motion.div 
-              className="absolute inset-0 border-2 border-green-400 rounded-xl"
+              className="absolute inset-0 border-2 border-blue-400 rounded-xl"
               initial={{ opacity: 0 }}
               animate={{ 
                 opacity: [0, 0.5, 0],
@@ -1206,36 +1136,36 @@ export default function MugshotMatchingGame() {
       {/* Game board - Responsive Layout */}
       <div className={cn(
         "min-h-[600px]",
-        isMobile ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+        isMobile ? "space-y-4" : "grid grid-cols-1 lg:grid-cols-2 gap-8"
       )}>
         {/* Mugshots Section */}
         <motion.div
           initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
           animate={{ opacity: 1, x: 0 }}
           transition={animationsEnabled ? { duration: 0.6 } : { duration: 0 }}
-          className="space-y-6"
+          className="space-y-4"
         >
-          <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
+          <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
             <motion.div 
               className="flex items-center gap-3"
               initial={animationsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
               animate={{ opacity: 1, x: 0 }}
               transition={animationsEnabled ? { delay: 0.2 } : { duration: 0 }}
             >
-              <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
-              <h2 className="text-xl font-bold text-gray-100">Mugshots</h2>
-              <span className="text-sm text-gray-400 ml-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg"></div>
+              <h2 className="text-lg font-semibold text-gray-100">Suspects</h2>
+              <span className="text-xs text-gray-400 ml-2">
                 {isMobile ? "Tap a mugshot to match with crimes" : "Click a mugshot to select them"}
               </span>
             </motion.div>
           </div>
           
-          {/* New 3x2 Mobile Grid Layout */}
+          {/* New 2x3 Grid Layout to match aceternity-demo */}
           <motion.div 
             className={cn(
               isMobile 
-                ? "grid grid-cols-3 gap-3" // Mobile: 3x2 grid
-                : "grid grid-cols-3 gap-3 lg:gap-4" // Desktop: 3x2 grid
+                ? "grid grid-cols-2 gap-3" // Mobile: 2x3 grid
+                : "grid grid-cols-2 gap-3 lg:gap-4" // Desktop: 2x3 grid
             )}
             initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
             animate={{ opacity: 1 }}
@@ -1252,25 +1182,25 @@ export default function MugshotMatchingGame() {
           initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
           animate={{ opacity: 1, x: 0 }}
           transition={animationsEnabled ? { duration: 0.6, delay: 0.3 } : { duration: 0 }}
-          className="space-y-6"
+          className="space-y-4"
         >
-          <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700">
+          <div className="bg-gray-800/30 p-3 rounded-lg border border-gray-700">
             <motion.div 
               className="flex items-center gap-3"
               initial={animationsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
               animate={{ opacity: 1, x: 0 }}
               transition={animationsEnabled ? { delay: 0.5 } : { duration: 0 }}
             >
-              <div className="w-4 h-4 bg-blue-500 rounded-full shadow-lg"></div>
-              <h2 className="text-xl font-bold text-gray-100">Crimes</h2>
-              <span className="text-sm text-gray-400 ml-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full shadow-lg"></div>
+              <h2 className="text-lg font-semibold text-gray-100">Crimes</h2>
+              <span className="text-xs text-gray-400 ml-2">
                 {isMobile ? "Tap to select or drop zone for suspects" : "Click a crime description to match"}
               </span>
             </motion.div>
           </div>
           <motion.div 
             className={cn(
-              "space-y-2.5", // Balanced spacing between crime cards
+              "space-y-3", // Reduced spacing between crime cards to match aceternity
               isMobile && "max-h-[50vh] overflow-y-auto" // Mobile: scrollable crimes list
             )}
             initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
@@ -1373,16 +1303,6 @@ export default function MugshotMatchingGame() {
             )}>
               {results.percentage >= 80 ? "Excellent Work!" : results.percentage >= 60 ? "Good Job!" : "Keep Practicing!"}
             </p>
-          </div>
-
-          {/* Results Ad Banner */}
-          <div className="mb-6 flex justify-center">
-            <AdBanner
-              data-ad-slot={process.env.NEXT_PUBLIC_AD_SLOT_RESULTS || "1234567892"}
-              variant={isMobile ? "mobile" : "banner"}
-              data-ad-format="auto"
-              className="w-full max-w-[728px]"
-            />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
@@ -1574,7 +1494,7 @@ export default function MugshotMatchingGame() {
       </div>
 
       {/* Inter-round Ad Modal */}
-      <InterRoundAdModal
+      <InterRoundModal
         isOpen={isInterRoundModalOpen}
         onClose={() => setIsInterRoundModalOpen(false)}
         onContinue={() => resetGame()}
