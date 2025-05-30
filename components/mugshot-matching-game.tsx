@@ -1235,7 +1235,7 @@ export default function MugshotMatchingGame() {
             className={cn(
               isMobile 
                 ? "grid grid-cols-3 gap-3" // Mobile: 3x2 grid
-                : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3 lg:gap-4" // Desktop: responsive grid
+                : "grid grid-cols-3 gap-3 lg:gap-4" // Desktop: 3x2 grid
             )}
             initial={animationsEnabled ? { opacity: 0 } : { opacity: 1 }}
             animate={{ opacity: 1 }}
