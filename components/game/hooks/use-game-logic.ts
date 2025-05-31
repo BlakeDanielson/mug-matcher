@@ -23,8 +23,8 @@ export function useGameLogic() {
   
   const gameStartTimeRef = useRef<number>(Date.now())
 
-  // Shuffle the mugshots and crimes
-  const resetGame = useCallback((data = inmates) => {
+  // Shuffle the mugshots and crimes - removed inmates dependency to break circular dependency
+  const shuffleGameData = useCallback((data: Inmate[]) => {
     if (!data.length) return
     
     setHasInitiallyLoaded(false)
@@ -38,9 +38,14 @@ export function useGameLogic() {
     setResults(null)
     setAttemptCounts({})
     gameStartTimeRef.current = Date.now()
-  }, [inmates])
+  }, [])
 
-  // Fetch inmate data from the API
+  // Reset game function that uses current inmates state
+  const resetGame = useCallback(() => {
+    shuffleGameData(inmates)
+  }, [inmates, shuffleGameData])
+
+  // Fetch inmate data from the API - removed resetGame dependency
   useEffect(() => {
     const fetchInmates = async () => {
       try {
@@ -60,7 +65,8 @@ export function useGameLogic() {
         }
         
         setInmates(inmatesArray)
-        resetGame(inmatesArray)
+        // Call shuffleGameData directly with the fetched data
+        shuffleGameData(inmatesArray)
       } catch (err) {
         console.error('Error fetching inmates:', err)
         setError(err instanceof Error ? err.message : 'Failed to load game data')
@@ -70,7 +76,7 @@ export function useGameLogic() {
     }
 
     fetchInmates()
-  }, [resetGame])
+  }, [shuffleGameData])
 
   // Mark as initially loaded after content is ready
   useEffect(() => {
