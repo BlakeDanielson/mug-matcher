@@ -97,12 +97,16 @@ export default function MugshotMatchingGame() {
         }
         
         const data = await response.json()
-        if (!Array.isArray(data) || data.length === 0) {
+        
+        // Handle the API response structure { inmates: [...] }
+        const inmatesArray = data.inmates || data
+        
+        if (!Array.isArray(inmatesArray) || inmatesArray.length === 0) {
           throw new Error('No inmate data received')
         }
         
-        setInmates(data)
-        resetGame(data)
+        setInmates(inmatesArray)
+        resetGame(inmatesArray)
       } catch (err) {
         console.error('Error fetching inmates:', err)
         setError(err instanceof Error ? err.message : 'Failed to load game data')
