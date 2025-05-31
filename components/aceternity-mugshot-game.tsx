@@ -241,8 +241,8 @@ export default function CleanAceternityMugshotGame() {
 
   if (results) {
     return (
-      <div className="flex justify-center items-center min-h-screen p-2 sm:p-4 lg:p-6">
-        <div className="w-full max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[85vw] bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="w-full min-h-screen bg-white dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-none">
           <EnhancedGameResults
             results={results}
             onPlayAgain={() => resetGame()}
@@ -263,10 +263,10 @@ export default function CleanAceternityMugshotGame() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-2 sm:p-4 lg:p-6">
-      <div className="w-full max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[85vw] bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="w-full min-h-screen bg-white dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-none">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
           <div className="flex items-center gap-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
               <span className="text-blue-600 dark:text-blue-400 font-medium">
@@ -290,12 +290,12 @@ export default function CleanAceternityMugshotGame() {
         <div className="text-center mb-8">
           <TextGenerateEffect 
             words="Match the Mugshot to the Crime" 
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white"
           />
         </div>
 
         {/* Progress */}
-        <div className="mb-6">
+        <div className="mb-6 max-w-md mx-auto">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Progress</span>
             <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -308,9 +308,9 @@ export default function CleanAceternityMugshotGame() {
           />
         </div>
 
-        {/* Game Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 xl:gap-12 mb-6">
-          {/* Mugshots */}
+        {/* Full-Width Game Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 xl:gap-12 mb-6">
+          {/* Mugshots - Full Width */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Mugshots
@@ -320,7 +320,7 @@ export default function CleanAceternityMugshotGame() {
                 </Badge>
               )}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-3 sm:gap-4">
               {shuffledMugshotImages.map((mugshot) => (
                 <EnhancedMugshotCard
                   key={mugshot.id}
@@ -332,7 +332,7 @@ export default function CleanAceternityMugshotGame() {
             </div>
           </div>
 
-          {/* Crimes */}
+          {/* Crimes - Full Width */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Crimes
@@ -364,15 +364,17 @@ export default function CleanAceternityMugshotGame() {
         </div>
 
         {/* Controls */}
-        <EnhancedGameControls
-          onSubmit={handleSubmit}
-          onReset={() => resetGame()}
-          canSubmit={canSubmit}
-          matchCount={totalMatches}
-          totalMatches={shuffledMugshotImages.length}
-          showProgress={true}
-          className="mb-4"
-        />
+        <div className="max-w-md mx-auto">
+          <EnhancedGameControls
+            onSubmit={handleSubmit}
+            onReset={() => resetGame()}
+            canSubmit={canSubmit}
+            matchCount={totalMatches}
+            totalMatches={shuffledMugshotImages.length}
+            showProgress={true}
+            className="mb-4"
+          />
+        </div>
 
         {/* Mobile Crime Modal */}
         {mobileCrimeModalMugshot && (
