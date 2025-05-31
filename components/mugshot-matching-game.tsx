@@ -421,8 +421,8 @@ export default function MugshotMatchingGame() {
   // If results, show the results section
   if (results) {
     return (
-      <div className="flex justify-center items-center min-h-screen p-8 lg:p-12">
-        <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl p-10 lg:p-12 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex justify-center items-center min-h-screen p-2 sm:p-4 lg:p-6">
+        <div className="w-full max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[85vw] bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-200 dark:border-gray-700">
           <CleanGameResults
             results={results}
             onPlayAgain={() => resetGame()}
@@ -436,10 +436,10 @@ export default function MugshotMatchingGame() {
   const totalMatches = Object.values(matches).filter(Boolean).length
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-8 lg:p-12">
-      <div className="w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl p-10 lg:p-12 shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="flex justify-center items-center min-h-screen p-2 sm:p-4 lg:p-6">
+      <div className="w-full max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[85vw] bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
               <span className="text-blue-600 dark:text-blue-400 font-medium">
@@ -463,24 +463,24 @@ export default function MugshotMatchingGame() {
         </div>
 
         {/* Title */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Match the Mugshot to the Crime
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
             Study the suspects and match them to their crimes
           </p>
         </div>
 
         {/* Progress */}
-        <div className="mb-8">
+        <div className="mb-6">
           <GameProgress totalMatches={totalMatches} />
         </div>
 
         {/* Game Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 xl:gap-12 mb-6">
           {/* Mugshots */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Suspects
               {selectedMugshotId && (
@@ -489,7 +489,7 @@ export default function MugshotMatchingGame() {
                 </Badge>
               )}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {shuffledMugshotImages.map((mugshot, index) => (
                 <CleanMugshotCard
                   key={mugshot.id}
@@ -511,7 +511,7 @@ export default function MugshotMatchingGame() {
           </div>
 
           {/* Crimes */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               Crimes
               {selectedDescriptionId && (
@@ -520,7 +520,7 @@ export default function MugshotMatchingGame() {
                 </Badge>
               )}
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {shuffledCrimeDescriptions.map((crime, index) => {
                 const matchedMugshotId = Object.keys(matches).find(key => matches[key] === crime.id.toString())
                 const matchedMugshot = matchedMugshotId ? (getInmateDataById(matchedMugshotId) || null) : null
@@ -549,7 +549,7 @@ export default function MugshotMatchingGame() {
           canSubmit={totalMatches === shuffledMugshotImages.length}
           matchCount={totalMatches}
           totalMatches={shuffledMugshotImages.length}
-          className="mb-6"
+          className="mb-4"
         />
 
         {/* Instructions */}
@@ -559,7 +559,7 @@ export default function MugshotMatchingGame() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="text-center text-gray-600 dark:text-gray-400 mt-8"
+              className="text-center text-gray-600 dark:text-gray-400 mt-6"
             >
               <p className="flex items-center justify-center gap-2">
                 {isMobile ? (
