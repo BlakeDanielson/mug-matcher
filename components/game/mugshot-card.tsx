@@ -1,10 +1,12 @@
-import { useState } from "react"
-import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, XCircle, Star } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useTouchTarget, useHapticFeedback } from "@/hooks/use-mobile-interactions"
-import { Inmate, GameResults } from "./types"
+'use client';
+
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, XCircle, Star } from 'lucide-react';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { Inmate, GameResults } from './types';
+import { useTouchTarget } from '@/hooks/use-mobile-interactions';
 
 interface MugshotCardProps {
   mugshot: Inmate
@@ -145,73 +147,6 @@ export function CleanMugshotCard({
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
-  )
-}
-
-export function EnhancedMugshotCard({ 
-  mugshot, 
-  index, 
-  hasInitiallyLoaded = true 
-}: { 
-  mugshot: Inmate
-  index: number
-  hasInitiallyLoaded?: boolean
-}) {
-  const { triggerHaptic } = useHapticFeedback()
-  const { touchTargetProps } = useTouchTarget()
-  const [isFlashing, setIsFlashing] = useState(false)
-
-  const handleMugshotClick = () => {
-    triggerHaptic('light')
-    setIsFlashing(true)
-    setTimeout(() => setIsFlashing(false), 600)
-  }
-
-  return (
-    <motion.div
-      initial={!hasInitiallyLoaded ? { opacity: 0, y: 20 } : false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={!hasInitiallyLoaded ? { delay: index * 0.1, duration: 0.5 } : { duration: 0 }}
-      className={cn(
-        "cursor-pointer group relative",
-        touchTargetProps.className
-      )}
-      onClick={handleMugshotClick}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      style={touchTargetProps.style}
-    >
-      <motion.div
-        className="relative rounded-xl overflow-hidden border-2 aspect-square shadow-lg bg-gray-800/50 transition-all duration-300 border-gray-600"
-        animate={{
-          scale: isFlashing ? [1, 1.05, 1] : 1,
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <motion.img
-          src={mugshot.image || "/placeholder.svg"}
-          alt={`Mugshot ${index + 1}`}
-          className="w-full h-full object-cover"
-          animate={{
-            filter: isFlashing ? "brightness(1.2)" : "brightness(1)",
-            scale: isFlashing ? [1, 1.03, 1] : 1
-          }}
-          transition={{ duration: 0.6 }}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = "/placeholder.svg?height=300&width=300&text=" + encodeURIComponent(mugshot.name);
-          }}
-        />
-        
-        {/* Simple name label at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black text-white text-center py-2 px-3">
-          <div className="text-sm font-medium truncate">
-            {mugshot.name}
-          </div>
-        </div>
-      </motion.div>
     </motion.div>
   )
 } 

@@ -1,10 +1,6 @@
-import MugshotMatchingGame from "@/components/mugshot-matching-game"
+import MugshotMatchingGame from '@/components/mugshot-matching-game'
 import { GameLayout } from "@/components/ui/game-layout"
 import { BuyMeCoffeeButton } from "@/components/ui/buy-me-coffee"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sparkles, Zap } from "lucide-react"
 
 export default function Home() {
   return (
@@ -19,32 +15,8 @@ export default function Home() {
                 Mugshot Matching Game
               </h1>
               
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-blue-500/50 bg-blue-900/30 text-blue-300">
-                    <Zap className="h-3 w-3 mr-1" />
-                    Current: ShadCN UI
-                  </Badge>
-                </div>
-                
-                <div className="flex gap-3">
-                  <Button 
-                    asChild 
-                    variant="outline" 
-                    size="sm"
-                    className="border-purple-500/50 bg-purple-900/30 text-purple-300 hover:bg-purple-800/50"
-                  >
-                    <Link href="/aceternity-demo">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Try Aceternity UI Version
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-              
               <p className="text-gray-400 text-sm max-w-2xl mx-auto mb-6">
-                Experience the same addictive gameplay with two different stunning UI designs. 
-                Choose between our polished ShadCN implementation (below) or try the magical Aceternity UI version!
+                Match the mugshots with their corresponding crimes in this engaging puzzle game!
               </p>
             </div>
 

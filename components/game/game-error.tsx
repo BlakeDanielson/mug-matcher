@@ -20,29 +20,4 @@ export function GameError({ error, onRetry }: GameErrorProps) {
       </div>
     </div>
   )
-}
-
-export function EnhancedGameError({ error, onRetry }: GameErrorProps) {
-  return (
-    <div className="w-full">
-      <div className="p-8 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800">
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800">
-              <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Game Loading Error</h2>
-          <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">{error}</p>
-          <Button 
-            onClick={onRetry}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
 } 

@@ -400,6 +400,17 @@ export default function MugshotMatchingGame() {
     triggerHaptic('medium')
   }
 
+  const handleCrimeClick = (crime: Inmate) => {
+    if (results || isMobile) return
+    
+    triggerHaptic('light')
+    setSelectedDescriptionId(crime.id.toString())
+    
+    if (selectedMugshotId) {
+      handleMatch(selectedMugshotId, crime.id.toString())
+    }
+  }
+
   // If loading, show a loading state
   if (loading) {
     return (
@@ -533,7 +544,7 @@ export default function MugshotMatchingGame() {
                     isSelected={selectedDescriptionId === crime.id.toString()}
                     isMatched={!!matchedMugshot}
                     matchedMugshot={matchedMugshot}
-                    onClick={() => handleMatch(crime.id.toString(), crime.id.toString())}
+                    onClick={() => handleCrimeClick(crime)}
                     results={results}
                   />
                 )

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Timer, Star, Target } from "lucide-react"
 import { formatPoints } from "@/points"
@@ -58,47 +57,6 @@ export function GameStats({
         </div>
       )}
     </div>
-  )
-}
-
-export function EnhancedGameStats({ 
-  totalMatches, 
-  correctMatches, 
-  gameStartTime 
-}: { 
-  totalMatches: number
-  correctMatches: number
-  gameStartTime: number 
-}) {
-  const [elapsedTime, setElapsedTime] = useState(0)
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - gameStartTime) / 1000))
-    }, 1000)
-    
-    return () => clearInterval(interval)
-  }, [gameStartTime])
-  
-  const accuracy = totalMatches > 0 ? Math.round((correctMatches / totalMatches) * 100) : 0
-  
-  return (
-    <>
-      <Badge variant="outline" className="border-blue-500/50 bg-blue-900/30 text-blue-300 px-3 py-1">
-        <Timer className="h-3 w-3 mr-1" />
-        {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
-      </Badge>
-      
-      <Badge variant="outline" className="border-green-500/50 bg-green-900/30 text-green-300 px-3 py-1">
-        <Target className="h-3 w-3 mr-1" />
-        {correctMatches}/{totalMatches} Correct
-      </Badge>
-      
-      <Badge variant="outline" className="border-purple-500/50 bg-purple-900/30 text-purple-300 px-3 py-1">
-        <Star className="h-3 w-3 mr-1" />
-        {accuracy}% Accuracy
-      </Badge>
-    </>
   )
 }
 
