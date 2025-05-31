@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, CheckCircle, Play, Pause, Home } from 'lucide-react';
+import { RotateCcw, CheckCircle, Play, Pause, Home, Loader2 } from 'lucide-react';
 
 interface GameControlsProps {
   onSubmit?: () => void;
@@ -13,6 +13,7 @@ interface GameControlsProps {
   canSubmit?: boolean;
   isGameActive?: boolean;
   isPaused?: boolean;
+  isSubmitting?: boolean;
   matchCount?: number;
   totalMatches?: number;
   className?: string;
@@ -27,6 +28,7 @@ export function CleanGameControls({
   canSubmit = false,
   isGameActive = true,
   isPaused = false,
+  isSubmitting = false,
   matchCount = 0,
   totalMatches = 0,
   className = ''
@@ -36,16 +38,25 @@ export function CleanGameControls({
       {onSubmit && (
         <Button
           onClick={onSubmit}
-          disabled={!canSubmit}
+          disabled={!canSubmit || isSubmitting}
           className="flex items-center gap-2"
           variant={canSubmit ? "default" : "secondary"}
         >
-          <CheckCircle className="w-4 h-4" />
-          Submit ({matchCount}/{totalMatches})
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-4 h-4" />
+              Submit ({matchCount}/{totalMatches})
+            </>
+          )}
         </Button>
       )}
 
-      {isGameActive && (
+      {isGameActive && !isSubmitting && (
         <>
           {isPaused ? (
             onResume && (
@@ -73,7 +84,7 @@ export function CleanGameControls({
         </>
       )}
 
-      {onReset && (
+      {onReset && !isSubmitting && (
         <Button
           onClick={onReset}
           variant="outline"
@@ -84,7 +95,7 @@ export function CleanGameControls({
         </Button>
       )}
 
-      {onHome && (
+      {onHome && !isSubmitting && (
         <Button
           onClick={onHome}
           variant="ghost"

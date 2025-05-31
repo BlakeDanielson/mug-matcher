@@ -1,271 +1,72 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { ArrowRightLeft } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useToast } from "@/hooks/use-toast"
-import { 
-  useHapticFeedback
-} from "@/hooks/use-mobile-interactions"
 
+// Import modular game components and hooks
 import {
-  PointsManager,
-  ScoreDisplay,
-  createMatchResult,
-  handleGameReset,
-  cleanupPointsSystem,
-  formatPoints
-} from "@/points"
-
-// Import modular game components
-import {
-  Inmate,
-  GameResults,
   GameSkeleton,
   GameError,
-  GameStats,
+  GameHeader,
+  GameProgress,
+  GameResultsView,
   CleanMugshotCard,
   CleanCrimeCard,
   CleanGameControls,
-  CleanGameResults
+  useGameLogic,
+  usePointsSystem,
+  submitGame,
+  type Inmate
 } from "@/components/game"
 
-// Progress Bar Component
-function GameProgress({ 
-  totalMatches 
-}: { 
-  totalMatches: number 
-}) {
-  const progressValue = totalMatches > 0 ? (totalMatches / 6) * 100 : 0
-  
-  return (
-    <div className="w-full">
-      <div className="flex justify-between text-xs text-gray-400 mb-1">
-        <span>Progress</span>
-        <span>{totalMatches}/6</span>
-      </div>
-      <Progress 
-        value={progressValue} 
-        className="h-2 bg-gray-700"
-      />
-    </div>
-  )
-}
-
 export default function MugshotMatchingGame() {
-  const { toast } = useToast()
   const isMobile = useIsMobile()
   
-  // Mobile interaction hooks
-  const { triggerHaptic } = useHapticFeedback()
+  // Use custom hooks for game logic and points system
+  const gameLogic = useGameLogic()
+  const pointsSystem = usePointsSystem()
 
-  const [inmates, setInmates] = useState<Inmate[]>([])
-  const [shuffledMugshotImages, setShuffledMugshotImages] = useState<Inmate[]>([])
-  const [shuffledCrimeDescriptions, setShuffledCrimeDescriptions] = useState<Inmate[]>([])
-  const [selectedMugshotId, setSelectedMugshotId] = useState<string | null>(null)
-  const [selectedDescriptionId, setSelectedDescriptionId] = useState<string | null>(null)
-  const [matches, setMatches] = useState<Record<string, string | null>>({})
-  const [results, setResults] = useState<GameResults | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    shuffledMugshotImages,
+    shuffledCrimeDescriptions,
+    selectedMugshotId,
+    selectedDescriptionId,
+    matches,
+    results,
+    loading,
+    error,
+    submitting,
+    attemptCounts,
+    gameStartTimeRef,
+    setSelectedMugshotId,
+    setSelectedDescriptionId,
+    setResults,
+    setSubmitting,
+    resetGame,
+    getInmateDataById,
+    handleMatch,
+    handleCrimeClick,
+    retryFetch,
+    triggerHaptic
+  } = gameLogic
 
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
+  const {
+    currentPoints,
+    highScore,
+    resetPoints,
+    addPointsForMatches,
+    formatPoints
+  } = pointsSystem
 
-  // Points system state
-  const [currentPoints, setCurrentPoints] = useState<number>(0)
-  const [highScore, setHighScore] = useState<number>(0)
-  const pointsManagerRef = useRef<PointsManager | null>(null)
-  const scoreDisplayRef = useRef<ScoreDisplay | null>(null)
-  
-  // Game state tracking
-  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({})
-  const gameStartTimeRef = useRef<number>(Date.now())
-
-  // Fetch inmate data from the API
-  useEffect(() => {
-    const fetchInmates = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const response = await fetch('/api/inmates')
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        
-        // Handle the API response structure { inmates: [...] }
-        const inmatesArray = data.inmates || data
-        
-        if (!Array.isArray(inmatesArray) || inmatesArray.length === 0) {
-          throw new Error('No inmate data received')
-        }
-        
-        setInmates(inmatesArray)
-        resetGame(inmatesArray)
-      } catch (err) {
-        console.error('Error fetching inmates:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load game data')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchInmates()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Mark as initially loaded after content is ready
-  useEffect(() => {
-    if (!loading && inmates.length > 0 && !hasInitiallyLoaded) {
-      const timer = setTimeout(() => {
-        setHasInitiallyLoaded(true)
-      }, 100)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [loading, inmates.length, hasInitiallyLoaded])
-
-  // Enable animations after everything is loaded
-  useEffect(() => {
-    if (!loading && inmates.length > 0) {
-      // Mark as initially loaded first
-      setHasInitiallyLoaded(true)
-    }
-  }, [loading, inmates.length])
-
-  // Retry function for error state
-  const retryFetch = () => {
-    setError(null)
-    setLoading(true)
-    // Re-trigger the fetch
-    window.location.reload()
-  }
-
-  // Initialize points system
-  useEffect(() => {
-    const initPoints = async () => {
-      try {
-        // Import dynamically to avoid SSR issues
-        const { createPointsManager } = await import('@/points')
-        
-        // Create points manager
-        const manager = await createPointsManager()
-        pointsManagerRef.current = manager
-        
-        // Update state with current points and high score
-        setCurrentPoints(manager.currentPoints)
-        setHighScore(manager.highScore)
-      } catch (error) {
-        console.error('Failed to initialize points system:', error)
-      }
-    }
-    
-    initPoints()
-    
-    // Cleanup on unmount
-    return () => {
-      if (pointsManagerRef.current) {
-        cleanupPointsSystem(pointsManagerRef.current).catch(console.error)
-      }
-    }
-  }, [])
-
-  // Effect to handle matching when both a mugshot and description are selected
-  useEffect(() => {
-    if (selectedMugshotId && selectedDescriptionId) {
-      // Track attempt count for this description
-      setAttemptCounts(prev => ({
-        ...prev,
-        [selectedDescriptionId]: (prev[selectedDescriptionId] || 0) + 1
-      }))
-
-      // Update the matches state
-      setMatches((prev) => {
-        const newMatches = { ...prev }
-        // Remove the mugshot if it was previously assigned to another description
-        Object.keys(newMatches).forEach(key => {
-          if (newMatches[key] === selectedMugshotId) {
-            newMatches[key] = null;
-          }
-        });
-        // Assign the selected mugshot to the selected description
-        newMatches[selectedDescriptionId] = selectedMugshotId
-        return newMatches
-      })
-
-      // Reset selections
-      setSelectedMugshotId(null)
-      setSelectedDescriptionId(null)
-    }
-  }, [selectedMugshotId, selectedDescriptionId]) // Dependency array
-
-  // Initialize score display after DOM is ready
-  useEffect(() => {
-    // Wait for DOM elements to be available
-    if (typeof document === 'undefined' || !pointsManagerRef.current) return
-    
-    // Small delay to ensure DOM is fully rendered
-    const timer = setTimeout(() => {
-      try {
-        const display = new ScoreDisplay(
-          '#current-score',
-          '#high-score',
-          '.game-container',
-          { animationDuration: 800 }
-        )
-        scoreDisplayRef.current = display
-        
-        // Update display
-        if (pointsManagerRef.current) {
-          display.updateScores(
-            pointsManagerRef.current.currentPoints,
-            pointsManagerRef.current.highScore
-          )
-        }
-      } catch (error) {
-        console.error('Failed to initialize score display:', error)
-      }
-    }, 100)
-    
-    return () => clearTimeout(timer)
-  }, [currentPoints, highScore]) // Re-run when points change
-
-  // Shuffle the mugshots and crimes
-  const resetGame = (data = inmates) => {
-    if (!data.length) return
-    
-    // Reset animation state for new game
-    setHasInitiallyLoaded(false)
-    
-    // Shuffle images and descriptions separately
-    const shuffledImages = [...data].sort(() => Math.random() - 0.5)
-    const shuffledDescriptions = [...data].sort(() => Math.random() - 0.5)
-
-    setShuffledCrimeDescriptions(shuffledDescriptions) // Set descriptions
-    setShuffledMugshotImages(shuffledImages) // Set images
-    setMatches({})
-    setResults(null)
-    setAttemptCounts({})
-    gameStartTimeRef.current = Date.now()
-    
-    // Reset points for current session
-    if (pointsManagerRef.current && scoreDisplayRef.current) {
-      handleGameReset(pointsManagerRef.current, scoreDisplayRef.current)
-    }
-  }
-
-  // Submit and evaluate matches
+  // Handle submit with extracted logic
   const handleSubmit = () => {
-    // Check if all crime descriptions have been matched with a mugshot image
-    // Ensure all descriptions have a non-null match value
-    const allDescriptionsMatched = shuffledCrimeDescriptions.length === Object.values(matches).filter(v => v !== null).length;
+    const allDescriptionsMatched = shuffledCrimeDescriptions.length === Object.values(matches).filter(v => v !== null).length
 
     if (!allDescriptionsMatched) {
-      toast({
+      gameLogic.toast({
         title: "Incomplete Matches",
         description: "Please match all images before submitting.",
         variant: "destructive",
@@ -273,145 +74,40 @@ export default function MugshotMatchingGame() {
       return
     }
 
-    // Calculate score and detailed results
-    const detailedResults: GameResults['detailedResults'] = [];
+    setSubmitting(true)
 
-    Object.entries(matches).forEach(([guessedCrimeId, mugshotId]) => {
-      if (mugshotId) {
-        const mugshot = getInmateDataById(mugshotId);
-        const guessedCrime = getInmateDataById(guessedCrimeId);
-        const actualCrime = getInmateDataById(mugshotId); // The actual crime for this mugshot
-        
-        if (mugshot && guessedCrime && actualCrime) {
-          detailedResults.push({
-            mugshotId: mugshotId,
-            mugshotName: mugshot.name,
-            mugshotImage: mugshot.image,
-            actualCrime: actualCrime.crime || "Unknown crime",
-            userGuessId: guessedCrimeId,
-            userGuessCrime: guessedCrime.crime || "Unknown crime",
-            isCorrect: guessedCrimeId === mugshotId
-          });
-        }
-      }
-    });
-
-    const correctMatches = detailedResults.filter(result => result.isCorrect);
-    const incorrectMatches = detailedResults.filter(result => !result.isCorrect);
-
-    const score = correctMatches.length;
-    const total = shuffledCrimeDescriptions.length;
-    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-
-    // Calculate points
-    let totalPointsEarned = 0
-    
-    if (pointsManagerRef.current) {
-      // Calculate time elapsed since game start
-      const timeElapsed = Date.now() - gameStartTimeRef.current
-      // Process each correct match for points
-      correctMatches.forEach(result => {
-        const attemptCount = attemptCounts[result.userGuessId] || 1
-
-        // Create match result
-        const matchResult = createMatchResult(true, timeElapsed, attemptCount)
-        
-        // Add points
-        const pointsEarned = pointsManagerRef.current!.addPoints(matchResult)
-        totalPointsEarned += pointsEarned
+    setTimeout(() => {
+      const gameResults = submitGame({
+        matches,
+        shuffledCrimeDescriptions,
+        getInmateDataById,
+        attemptCounts,
+        gameStartTime: gameStartTimeRef.current,
+        addPointsForMatches,
+        toast: gameLogic.toast,
+        triggerHaptic,
+        formatPoints
       })
-      
-      // Update points display
-      if (scoreDisplayRef.current) {
-        scoreDisplayRef.current.updateScores(
-          pointsManagerRef.current.currentPoints,
-          pointsManagerRef.current.highScore
-        )
-        
-        // Animate points if earned
-        if (totalPointsEarned > 0) {
-          scoreDisplayRef.current.animatePoints(totalPointsEarned, true)
-        }
+
+      if (gameResults) {
+        setResults(gameResults)
       }
-      
-      // Save state
-      pointsManagerRef.current.saveState().catch(error => {
-        console.warn('Failed to save points state:', error)
-      })
-      
-      // Update state
-      setCurrentPoints(pointsManagerRef.current.currentPoints)
-      setHighScore(pointsManagerRef.current.highScore)
-    }
-
-    const gameResults: GameResults = {
-      score,
-      total,
-      percentage,
-      submitted: true,
-      correctMatches: correctMatches.map(result => Number(result.mugshotId)),
-      incorrectMatches: incorrectMatches.map(result => Number(result.mugshotId)),
-      totalCorrect: correctMatches.length,
-      totalIncorrect: incorrectMatches.length,
-      accuracy: percentage,
-      pointsEarned: totalPointsEarned,
-      detailedResults: detailedResults
-    }
-
-    setResults(gameResults)
-
-    // Haptic feedback based on performance
-    if (score === total && total > 0) {
-      // Perfect score - success pattern
-      triggerHaptic('success');
-    } else if (percentage >= 70) {
-      // Good score - medium feedback
-      triggerHaptic('medium');
-    } else {
-      // Poor score - error pattern
-      triggerHaptic('error');
-    }
-
-    toast({
-      title: `Your Score: ${score}/${total}`,
-      description: `You got ${percentage}% correct! ${totalPointsEarned > 0 ? `+${formatPoints(totalPointsEarned)} points!` : ''}`,
-      variant: score === total && total > 0 ? "default" : "destructive",
-    })
+      setSubmitting(false)
+    }, 300)
   }
 
-  // Find the mugshot data (name, image, crime) by ID
-  const getInmateDataById = (id: string | number): Inmate | undefined => {
-    // Ensure comparison is done with string IDs if necessary, or convert id to number
-    const numericId = Number(id);
-    return inmates.find((inmate) => inmate.id === numericId);
+  // Enhanced reset function that includes points reset
+  const handleReset = () => {
+    resetGame()
+    resetPoints()
   }
 
-  const handleMatch = (mugshotId: string, crimeId: string) => {
-    const currentAttempts = attemptCounts[mugshotId] || 0
-    setAttemptCounts(prev => ({
-      ...prev,
-      [mugshotId]: currentAttempts + 1
-    }))
-
-    setMatches(prev => ({ ...prev, [mugshotId]: crimeId }))
-    setSelectedMugshotId(null)
-    setSelectedDescriptionId(null)
-    
-    triggerHaptic('medium')
+  // Handle crime click with mobile support
+  const handleCrimeClickWithMobile = (crime: Inmate) => {
+    handleCrimeClick(crime, isMobile)
   }
 
-  const handleCrimeClick = (crime: Inmate) => {
-    if (results || isMobile) return
-    
-    triggerHaptic('light')
-    setSelectedDescriptionId(crime.id.toString())
-    
-    if (selectedMugshotId) {
-      handleMatch(selectedMugshotId, crime.id.toString())
-    }
-  }
-
-  // If loading, show a loading state
+  // If loading, show loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen p-6">
@@ -420,7 +116,7 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  // If error, show an error state
+  // If error, show error state
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen p-6">
@@ -429,18 +125,21 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  // If results, show the results section
+  // If results, show results view
   if (results) {
     return (
-      <div className="flex justify-center items-center min-h-screen p-8 lg:p-12">
-        <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl p-10 lg:p-12 shadow-lg border border-gray-200 dark:border-gray-700">
-          <CleanGameResults
-            results={results}
-            onPlayAgain={() => resetGame()}
-            onHome={() => window.location.href = '/'}
-          />
-        </div>
-      </div>
+      <GameResultsView
+        results={results}
+        shuffledMugshotImages={shuffledMugshotImages}
+        shuffledCrimeDescriptions={shuffledCrimeDescriptions}
+        matches={matches}
+        getInmateDataById={getInmateDataById}
+        onReset={handleReset}
+        currentPoints={currentPoints}
+        highScore={highScore}
+        formatPoints={formatPoints}
+        gameStartTime={gameStartTimeRef.current}
+      />
     )
   }
 
@@ -450,28 +149,13 @@ export default function MugshotMatchingGame() {
     <div className="flex justify-center items-center min-h-screen p-8 lg:p-12">
       <div className="w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl p-10 lg:p-12 shadow-lg border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
-              <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {formatPoints(currentPoints)} pts
-              </span>
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg">
-              <span className="text-amber-600 dark:text-amber-400 font-medium">
-                High: {formatPoints(highScore)}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <GameStats
-              totalMatches={shuffledMugshotImages.length}
-              correctMatches={0}
-              gameStartTime={gameStartTimeRef.current}
-              currentPoints={currentPoints}
-            />
-          </div>
-        </div>
+        <GameHeader
+          currentPoints={currentPoints}
+          highScore={highScore}
+          formatPoints={formatPoints}
+          totalMatches={shuffledMugshotImages.length}
+          gameStartTime={gameStartTimeRef.current}
+        />
 
         {/* Title */}
         <div className="text-center mb-12">
@@ -510,8 +194,13 @@ export default function MugshotMatchingGame() {
                   isMatched={!!matches[mugshot.id.toString()]}
                   onClick={() => {
                     triggerHaptic('light')
-                    setSelectedMugshotId(mugshot.id.toString())
-                    setSelectedDescriptionId(null)
+                    
+                    if (selectedDescriptionId) {
+                      handleMatch(mugshot.id.toString(), selectedDescriptionId)
+                    } else {
+                      setSelectedMugshotId(mugshot.id.toString())
+                      setSelectedDescriptionId(null)
+                    }
                   }}
                   results={results}
                   matches={matches}
@@ -544,7 +233,7 @@ export default function MugshotMatchingGame() {
                     isSelected={selectedDescriptionId === crime.id.toString()}
                     isMatched={!!matchedMugshot}
                     matchedMugshot={matchedMugshot}
-                    onClick={() => handleCrimeClick(crime)}
+                    onClick={() => handleCrimeClickWithMobile(crime)}
                     results={results}
                   />
                 )
@@ -556,8 +245,9 @@ export default function MugshotMatchingGame() {
         {/* Controls */}
         <CleanGameControls
           onSubmit={handleSubmit}
-          onReset={() => resetGame()}
+          onReset={handleReset}
           canSubmit={totalMatches === shuffledMugshotImages.length}
+          isSubmitting={submitting}
           matchCount={totalMatches}
           totalMatches={shuffledMugshotImages.length}
           className="mb-6"
