@@ -301,7 +301,6 @@ export default function MugshotMatchingGame() {
         onClose={closeMobileCrimeModal}
         crimes={shuffledCrimeDescriptions}
         onCrimeSelect={handleMobileCrimeSelect}
-        selectedMugshotId={selectedMugshotForModal?.id.toString()}
         selectedMugshot={selectedMugshotForModal || undefined}
         matches={matches}
         getInmateDataById={getInmateDataById}
