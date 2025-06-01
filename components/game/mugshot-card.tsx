@@ -43,7 +43,7 @@ export function CleanMugshotCard({
       {...touchTargetProps}
     >
       <div className={cn(
-        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-sm hover:shadow-md",
+        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 shadow-sm hover:shadow-md min-w-[120px] w-full",
         (isSelected || isMatched) && "border-blue-500 ring-2 ring-blue-200 shadow-lg",
         !isSelected && !isMatched && "border-gray-200 dark:border-gray-700 hover:border-gray-300"
       )}>

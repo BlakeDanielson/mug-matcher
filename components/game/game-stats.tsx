@@ -35,21 +35,21 @@ export function GameStats({
   }
 
   return (
-    <div className={`flex items-center gap-4 text-sm ${className}`}>
-      <div className="flex items-center gap-1">
+    <div className={`flex items-center gap-4 text-sm flex-nowrap ${className}`}>
+      <div className="flex items-center gap-1 whitespace-nowrap">
         <Timer className="h-4 w-4 text-blue-500" />
         <span className="text-gray-600 dark:text-gray-400">
           {formatTime(elapsedTime)}
         </span>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 whitespace-nowrap">
         <Target className="h-4 w-4 text-green-500" />
         <span className="text-gray-600 dark:text-gray-400">
           {correctMatches}/{totalMatches}
         </span>
       </div>
       {currentPoints !== undefined && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 whitespace-nowrap">
           <Star className="h-4 w-4 text-yellow-500" />
           <span className="text-gray-600 dark:text-gray-400">
             {formatPoints(currentPoints)}
