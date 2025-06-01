@@ -94,7 +94,7 @@ export function MobileCrimeModal({
                     }}
                     className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
                       isCurrentlyMatched
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                        ? 'border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
@@ -103,17 +103,23 @@ export function MobileCrimeModal({
                         {crime.crime}
                       </p>
                       
-                      {isCurrentlyMatched && matchedMugshot && (
-                        <div className="flex items-center gap-2 pt-2 border-t border-green-200 dark:border-green-800">
+                      {isCurrentlyMatched && matchedMugshot ? (
+                        <div className="flex items-center gap-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                           <Image
                             src={matchedMugshot.image}
                             alt={matchedMugshot.name}
-                            width={20}
-                            height={20}
-                            className="w-5 h-5 rounded-full object-cover border border-green-500"
+                            width={24}
+                            height={24}
+                            className="w-6 h-6 rounded-full object-cover border border-blue-500"
                           />
-                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                            Currently matched to {matchedMugshot.name}
+                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            {matchedMugshot.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Select a mugshot
                           </span>
                         </div>
                       )}
