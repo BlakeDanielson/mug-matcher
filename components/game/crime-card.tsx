@@ -42,11 +42,13 @@ export function CleanCrimeCard({
       {...touchTargetProps}
     >
       <div className={cn(
-        "p-4 rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md min-h-[120px] relative",
+        "p-4 rounded-xl border-2 transition-all duration-200 min-h-[120px] relative",
         (isSelected || isMatched) 
-          ? "border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800"
-          : severityStyling.cardClassName,
-        !isSelected && !isMatched && "hover:border-gray-300"
+          ? "border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800 hover:shadow-xl"
+          : cn(
+              severityStyling.cardClassName,
+              "hover:shadow-md"
+            )
       )}>
         
         {/* Crime Severity Dot Indicator */}

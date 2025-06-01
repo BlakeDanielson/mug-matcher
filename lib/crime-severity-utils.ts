@@ -19,9 +19,9 @@ export function getSeverityColors(severity?: CrimeSeverity) {
         bgLight: 'bg-red-100',
         textLight: 'text-red-800',
         ring: 'ring-red-200',
-        gradient: 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30',
-        borderGradient: 'border-red-300 dark:border-red-700',
-        shadowColor: 'shadow-red-200/50 dark:shadow-red-900/30'
+        gradient: 'bg-gradient-to-br from-red-100 to-red-200 dark:from-red-950/50 dark:to-red-900/50',
+        borderGradient: 'border-red-400 dark:border-red-600',
+        shadowColor: 'shadow-red-300/50 dark:shadow-red-900/50'
       };
     case 'Medium':
       return {
@@ -31,9 +31,9 @@ export function getSeverityColors(severity?: CrimeSeverity) {
         bgLight: 'bg-orange-100',
         textLight: 'text-orange-800',
         ring: 'ring-orange-200',
-        gradient: 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30',
-        borderGradient: 'border-orange-300 dark:border-orange-700',
-        shadowColor: 'shadow-orange-200/50 dark:shadow-orange-900/30'
+        gradient: 'bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-950/50 dark:to-orange-900/50',
+        borderGradient: 'border-orange-400 dark:border-orange-600',
+        shadowColor: 'shadow-orange-300/50 dark:shadow-orange-900/50'
       };
     case 'Low':
       return {
@@ -43,9 +43,9 @@ export function getSeverityColors(severity?: CrimeSeverity) {
         bgLight: 'bg-yellow-100',
         textLight: 'text-yellow-800',
         ring: 'ring-yellow-200',
-        gradient: 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950/30 dark:to-yellow-900/30',
-        borderGradient: 'border-yellow-300 dark:border-yellow-700',
-        shadowColor: 'shadow-yellow-200/50 dark:shadow-yellow-900/30'
+        gradient: 'bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-950/50 dark:to-yellow-900/50',
+        borderGradient: 'border-yellow-400 dark:border-yellow-600',
+        shadowColor: 'shadow-yellow-300/50 dark:shadow-yellow-900/50'
       };
     case 'Unknown':
     default:
@@ -56,9 +56,9 @@ export function getSeverityColors(severity?: CrimeSeverity) {
         bgLight: 'bg-gray-100',
         textLight: 'text-gray-800',
         ring: 'ring-gray-200',
-        gradient: 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700',
-        borderGradient: 'border-gray-300 dark:border-gray-600',
-        shadowColor: 'shadow-gray-200/50 dark:shadow-gray-700/30'
+        gradient: 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700',
+        borderGradient: 'border-gray-400 dark:border-gray-600',
+        shadowColor: 'shadow-gray-300/50 dark:shadow-gray-700/50'
       };
   }
 }
@@ -99,16 +99,24 @@ export function getSeverityIndicator(severity?: CrimeSeverity) {
 export function getSeverityCardStyling(severity?: CrimeSeverity, isSelected = false, isMatched = false) {
   const colors = getSeverityColors(severity);
   
-  // Base styling
-  let cardClasses = `${colors.gradient} ${colors.borderGradient} ${colors.shadowColor}`;
-  
-  // Override with selection/match states if needed
+  // If selected or matched, use blue styling
   if (isSelected || isMatched) {
-    cardClasses = "border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800";
+    return {
+      cardClassName: "border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800",
+      severityDot: {
+        className: "hidden", // Hide dot when selected/matched
+        title: ""
+      },
+      severityText: {
+        className: "hidden", // Hide text when selected/matched
+        text: ""
+      }
+    };
   }
   
+  // Base severity styling with gradient background
   return {
-    cardClassName: cardClasses,
+    cardClassName: `${colors.gradient} border-2 ${colors.borderGradient} shadow-sm ${colors.shadowColor}`,
     severityDot: {
       className: `absolute top-3 right-3 w-3 h-3 rounded-full ${colors.bg} shadow-sm`,
       title: `Crime Severity: ${severity || 'Unknown'}`
