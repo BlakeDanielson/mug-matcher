@@ -8,6 +8,7 @@ interface CsvInmate {
   Name: string;
   MugshotURL: string;
   Best_Crime: string;
+  Crime_Severity?: string;
 }
 
 // Define the output inmate data structure (matching the existing API)
@@ -16,6 +17,7 @@ export interface Inmate {
   name: string;
   image: string;
   crime?: string;
+  crimeSeverity?: 'High' | 'Medium' | 'Low' | 'Unknown';
 }
 
 // Singleton instance for caching the CSV data
@@ -147,6 +149,10 @@ async function loadCsvData(): Promise<CsvInmate[]> {
       console.error(`[CSV-DB] CSV data is missing required fields. Expected InmateID, Name, MugshotURL, Best_Crime. Found fields: ${Object.keys(firstRecord || {}).join(', ')}`);
       throw new Error(`CSV data is missing required fields (expected InmateID, Name, MugshotURL, Best_Crime). The file format may be incorrect.`);
     }
+
+    // Log if Crime_Severity is available
+    const hasCrimeSeverity = firstRecord && 'Crime_Severity' in firstRecord;
+    console.log(`[CSV-DB] Crime_Severity column ${hasCrimeSeverity ? 'found' : 'not found'} in CSV data`);
 
     // Cache the data
     inmateCache = parseResult.data;
@@ -314,7 +320,8 @@ export async function getInmates(limit = 10): Promise<Inmate[]> {
         id,
         name: (inmate.Name || 'Unknown').replace(/"/g, ''), // Remove quotes from names
         image: inmate.MugshotURL || '',
-        crime: crime
+        crime: crime,
+        crimeSeverity: inmate.Crime_Severity as 'High' | 'Medium' | 'Low' | 'Unknown' | undefined
       };
     });
     

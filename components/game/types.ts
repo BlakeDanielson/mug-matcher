@@ -3,6 +3,7 @@ export interface Inmate {
   name: string
   image: string
   crime?: string
+  crimeSeverity?: 'High' | 'Medium' | 'Low' | 'Unknown'
 }
 
 export interface GameResults {

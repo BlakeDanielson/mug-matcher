@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Inmate, GameResults } from './types';
 import { useTouchTarget } from '@/hooks/use-mobile-interactions';
+import { getSeverityBadge } from '@/lib/crime-severity-utils';
 
 interface CrimeCardProps {
   crime: Inmate
@@ -28,6 +29,7 @@ export function CleanCrimeCard({
   results
 }: CrimeCardProps) {
   const { touchTargetProps } = useTouchTarget()
+  const severityBadge = getSeverityBadge(crime.crimeSeverity)
   
   return (
     <motion.div
@@ -47,9 +49,15 @@ export function CleanCrimeCard({
         
         {/* Crime description */}
         <div className="mb-3">
-          <p className="text-gray-900 dark:text-white font-medium leading-relaxed">
-            {crime.crime}
-          </p>
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <p className="text-gray-900 dark:text-white font-medium leading-relaxed flex-1">
+              {crime.crime}
+            </p>
+            {/* Crime Severity Badge */}
+            <span className={severityBadge.className}>
+              {severityBadge.text}
+            </span>
+          </div>
         </div>
 
         {/* Status section */}

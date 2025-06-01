@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, RotateCcw, Home } from 'lucide-react'
 import { GameResults, Inmate } from './types'
 import { GameHeader } from './game-header'
+import { getSeverityBadge } from '@/lib/crime-severity-utils'
 
 interface GameResultsViewProps {
   results: GameResults
@@ -227,6 +228,15 @@ export function GameResultsView({
                           <span className="font-bold text-gray-900 dark:text-white text-sm">
                             {crime.crime}
                           </span>
+                          {/* Crime Severity Badge */}
+                          {(() => {
+                            const severityBadge = getSeverityBadge(crime.crimeSeverity);
+                            return (
+                              <span className={severityBadge.className}>
+                                {severityBadge.text}
+                              </span>
+                            );
+                          })()}
                           {isCorrect && (
                             <motion.span 
                               initial={{ scale: 0 }}
