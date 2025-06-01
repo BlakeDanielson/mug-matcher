@@ -41,9 +41,9 @@ export function GameResultsView({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="flex justify-center items-center min-h-screen p-8 lg:p-12"
+      className={`flex justify-center items-center min-h-screen ${isMobile ? 'p-4' : 'p-8 lg:p-12'}`}
     >
-      <div className="w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl p-10 lg:p-12 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className={`w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl ${isMobile ? 'p-4' : 'p-10 lg:p-12'} shadow-lg border border-gray-200 dark:border-gray-700`}>
         {/* Header */}
         <GameHeader
           currentPoints={currentPoints}
@@ -60,12 +60,12 @@ export function GameResultsView({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-center mb-12"
+          className={`text-center ${isMobile ? 'mb-6' : 'mb-12'}`}
         >
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl lg:text-5xl'} font-bold text-gray-900 dark:text-white mb-4`}>
             Game Complete!
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className={`${isMobile ? 'text-base' : 'text-lg'} text-gray-600 dark:text-gray-400`}>
             {results.percentage >= 90 ? 'Excellent work! 🎉' :
              results.percentage >= 70 ? 'Good job! 👍' :
              results.percentage >= 50 ? 'Not bad! Keep practicing 💪' :
@@ -78,12 +78,12 @@ export function GameResultsView({
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className={`${isMobile ? 'space-y-8' : 'grid grid-cols-1 lg:grid-cols-2 gap-12'} mb-8`}
+          className={`${isMobile ? 'space-y-6' : 'grid grid-cols-1 lg:grid-cols-2 gap-12'} mb-8`}
         >
           {/* Mugshots with Results */}
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              Your Matches
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-900 dark:text-white flex items-center gap-2`}>
+              Matches
               <div className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm rounded-full">
                 Results
               </div>
@@ -100,17 +100,17 @@ export function GameResultsView({
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
-                    className={`relative p-4 rounded-xl border-2 transition-all ${
+                    className={`relative ${isMobile ? 'p-4' : 'p-4'} rounded-xl border-2 transition-all ${
                       isCorrect
                         ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20'
                         : 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
-                    } ${isMobile ? 'flex items-center gap-4' : ''}`}
+                    }`}
                   >
                     <motion.div 
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.6 + index * 0.1, duration: 0.3, type: "spring" }}
-                      className={`absolute ${isMobile ? '-top-2 -left-2' : '-top-2 -right-2'} w-8 h-8 rounded-full flex items-center justify-center ${
+                      className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center ${
                         isCorrect ? 'bg-green-500' : 'bg-red-500'
                       }`}
                     >
@@ -122,50 +122,54 @@ export function GameResultsView({
                     </motion.div>
 
                     {isMobile ? (
-                      // Mobile layout: horizontal card
-                      <>
-                        <div className="relative flex-shrink-0">
+                      // Mobile layout: improved vertical card
+                      <div className="text-center space-y-3">
+                        <div className="relative mx-auto w-20 h-20">
                           <Image
                             src={mugshot.image}
                             alt={mugshot.name}
                             width={80}
                             height={80}
-                            className="w-20 h-20 object-cover rounded-lg"
+                            className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
                           />
                         </div>
                         
-                        <div className="flex-1 space-y-2">
-                          <h3 className="font-bold text-gray-900 dark:text-white text-base">
+                        <div className="space-y-3">
+                          <h3 className="font-bold text-gray-900 dark:text-white text-lg">
                             {mugshot.name}
                           </h3>
                           
-                          <div className="space-y-1">
-                            <p className="text-sm">
-                              <span className="font-semibold text-green-700 dark:text-green-300">
-                                Actual:
-                              </span>
-                              <span className="ml-1 text-gray-700 dark:text-gray-300">
+                          <div className="space-y-2 text-left">
+                            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                              <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">
+                                ACTUAL CRIME:
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white leading-relaxed">
                                 {mugshot.crime}
-                              </span>
-                            </p>
+                              </p>
+                            </div>
                             
                             {userGuess && (
-                              <p className="text-sm">
-                                <span className={`font-semibold ${
+                              <div className={`p-2 rounded-lg border ${
+                                isCorrect 
+                                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' 
+                                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
+                              }`}>
+                                <p className={`text-xs font-semibold mb-1 ${
                                   isCorrect 
                                     ? 'text-green-700 dark:text-green-300' 
                                     : 'text-red-700 dark:text-red-300'
                                 }`}>
-                                  Your guess:
-                                </span>
-                                <span className="ml-1 text-gray-700 dark:text-gray-300">
+                                  YOUR GUESS:
+                                </p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white leading-relaxed">
                                   {userGuess.crime}
-                                </span>
-                              </p>
+                                </p>
+                              </div>
                             )}
                           </div>
                         </div>
-                      </>
+                      </div>
                     ) : (
                       // Desktop layout: vertical card
                       <div className="text-center space-y-3">
