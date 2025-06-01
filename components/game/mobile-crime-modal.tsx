@@ -3,15 +3,17 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 import { Inmate } from './types';
 
 interface MobileCrimeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  crimes: string[];
-  onCrimeSelect: (crime: string) => void;
-  selectedCrime?: string;
-  inmate?: Inmate;
+  crimes: Inmate[];
+  onCrimeSelect: (crimeId: string) => void;
+  selectedMugshot?: Inmate;
+  matches: Record<string, string | null>;
+  getInmateDataById: (id: string | number) => Inmate | undefined;
 }
 
 export function MobileCrimeModal({
@@ -19,8 +21,9 @@ export function MobileCrimeModal({
   onClose,
   crimes,
   onCrimeSelect,
-  selectedCrime,
-  inmate
+  selectedMugshot,
+  matches,
+  getInmateDataById
 }: MobileCrimeModalProps) {
   return (
     <AnimatePresence>
@@ -52,39 +55,72 @@ export function MobileCrimeModal({
               </button>
             </div>
 
-            {inmate && (
-              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Matching crime for:
-                </p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {inmate.name}
-                </p>
+            {selectedMugshot && (
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center gap-3">
+                <Image
+                  src={selectedMugshot.image}
+                  alt={selectedMugshot.name}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
+                />
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Matching crime for:
+                  </p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {selectedMugshot.name}
+                  </p>
+                </div>
               </div>
             )}
 
             <div className="space-y-3">
-              {crimes.map((crime, index) => (
-                <motion.button
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => {
-                    onCrimeSelect(crime);
-                    onClose();
-                  }}
-                  className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
-                    selectedCrime === crime
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                >
-                  <p className="text-gray-900 dark:text-white font-medium">
-                    {crime}
-                  </p>
-                </motion.button>
-              ))}
+              {crimes.map((crime, index) => {
+                // Find if this crime is already matched to a mugshot
+                const matchedMugshotId = Object.keys(matches).find(key => matches[key] === crime.id.toString())
+                const matchedMugshot = matchedMugshotId ? getInmateDataById(matchedMugshotId) : null
+                const isCurrentlyMatched = !!matchedMugshot
+                
+                return (
+                  <motion.button
+                    key={crime.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => {
+                      onCrimeSelect(crime.id.toString());
+                      onClose();
+                    }}
+                    className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
+                      isCurrentlyMatched
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      <p className="text-gray-900 dark:text-white font-medium leading-relaxed">
+                        {crime.crime}
+                      </p>
+                      
+                      {isCurrentlyMatched && matchedMugshot && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-green-200 dark:border-green-800">
+                          <Image
+                            src={matchedMugshot.image}
+                            alt={matchedMugshot.name}
+                            width={20}
+                            height={20}
+                            className="w-5 h-5 rounded-full object-cover border border-green-500"
+                          />
+                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                            Currently matched to {matchedMugshot.name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.button>
+                )
+              })}
             </div>
           </motion.div>
         </motion.div>

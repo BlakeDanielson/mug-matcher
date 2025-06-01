@@ -21,6 +21,10 @@ export function useGameLogic() {
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
   const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({})
   
+  // Mobile-specific state
+  const [isMobileCrimeModalOpen, setIsMobileCrimeModalOpen] = useState(false)
+  const [selectedMugshotForModal, setSelectedMugshotForModal] = useState<Inmate | null>(null)
+  
   const gameStartTimeRef = useRef<number>(Date.now())
 
   // Shuffle the mugshots and crimes - removed inmates dependency to break circular dependency
@@ -43,6 +47,9 @@ export function useGameLogic() {
   // Reset game function that uses current inmates state
   const resetGame = useCallback(() => {
     shuffleGameData(inmates)
+    // Reset mobile state
+    setIsMobileCrimeModalOpen(false)
+    setSelectedMugshotForModal(null)
   }, [inmates, shuffleGameData])
 
   // Fetch inmate data from the API - removed resetGame dependency
@@ -144,6 +151,45 @@ export function useGameLogic() {
     }
   }
 
+  // Mobile-specific handlers
+  const handleMugshotClickMobile = (mugshot: Inmate) => {
+    if (results) return
+    
+    triggerHaptic('light')
+    setSelectedMugshotForModal(mugshot)
+    setIsMobileCrimeModalOpen(true)
+  }
+
+  const handleMobileCrimeSelect = (crimeId: string) => {
+    if (!selectedMugshotForModal) return
+    
+    // Remove any existing match for this crime
+    setMatches(prev => {
+      const newMatches = { ...prev }
+      Object.keys(newMatches).forEach(key => {
+        if (newMatches[key] === crimeId) {
+          newMatches[key] = null;
+        }
+      });
+      newMatches[selectedMugshotForModal.id.toString()] = crimeId
+      return newMatches
+    })
+
+    // Update attempt counts
+    setAttemptCounts(prev => ({
+      ...prev,
+      [selectedMugshotForModal.id.toString()]: (prev[selectedMugshotForModal.id.toString()] || 0) + 1
+    }))
+
+    triggerHaptic('medium')
+    setSelectedMugshotForModal(null)
+  }
+
+  const closeMobileCrimeModal = () => {
+    setIsMobileCrimeModalOpen(false)
+    setSelectedMugshotForModal(null)
+  }
+
   const retryFetch = () => {
     setError(null)
     setLoading(true)
@@ -166,6 +212,10 @@ export function useGameLogic() {
     attemptCounts,
     gameStartTimeRef,
     
+    // Mobile state
+    isMobileCrimeModalOpen,
+    selectedMugshotForModal,
+    
     // Actions
     setSelectedMugshotId,
     setSelectedDescriptionId,
@@ -179,6 +229,11 @@ export function useGameLogic() {
     handleCrimeClick,
     retryFetch,
     toast,
-    triggerHaptic
+    triggerHaptic,
+    
+    // Mobile actions
+    handleMugshotClickMobile,
+    handleMobileCrimeSelect,
+    closeMobileCrimeModal
   }
 } 

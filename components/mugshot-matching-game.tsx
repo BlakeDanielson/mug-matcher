@@ -22,6 +22,7 @@ import {
 } from "@/components/game"
 
 import { GameStats } from './game/game-stats'
+import { MobileCrimeModal } from './game/mobile-crime-modal'
 
 export default function MugshotMatchingGame() {
   const isMobile = useIsMobile()
@@ -51,7 +52,13 @@ export default function MugshotMatchingGame() {
     handleMatch,
     handleCrimeClick,
     retryFetch,
-    triggerHaptic
+    triggerHaptic,
+    // Mobile state and actions
+    isMobileCrimeModalOpen,
+    selectedMugshotForModal,
+    handleMugshotClickMobile,
+    handleMobileCrimeSelect,
+    closeMobileCrimeModal
   } = gameLogic
 
   const {
@@ -108,6 +115,22 @@ export default function MugshotMatchingGame() {
     handleCrimeClick(crime, isMobile)
   }
 
+  // Handle mugshot click with mobile support
+  const handleMugshotClick = (mugshot: Inmate) => {
+    if (isMobile) {
+      handleMugshotClickMobile(mugshot)
+    } else {
+      triggerHaptic('light')
+      
+      if (selectedDescriptionId) {
+        handleMatch(mugshot.id.toString(), selectedDescriptionId)
+      } else {
+        setSelectedMugshotId(mugshot.id.toString())
+        setSelectedDescriptionId(null)
+      }
+    }
+  }
+
   // If loading, show loading state
   if (loading) {
     return (
@@ -126,7 +149,7 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  // If results, show results view
+  // If results are available, show results view
   if (results) {
     return (
       <GameResultsView
@@ -144,57 +167,35 @@ export default function MugshotMatchingGame() {
     )
   }
 
-  const totalMatches = Object.values(matches).filter(Boolean).length
+  // Calculate total matches for progress
+  const totalMatches = Object.values(matches).filter(match => match !== null).length
 
   return (
-    <div className="w-full">
-      {/* Title */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          Match the Mugshot to the Crime
+    <div className="max-w-7xl mx-auto p-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          Mugshot Matching Game
         </h1>
-      </div>
-
-      {/* Header with all elements on same line in specified order */}
-      <div className="flex items-center justify-between mb-8">
-        {/* Left side: Points and High Score */}
-        <div className="flex items-center gap-4 flex-1">
-          {/* Points */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
-            <span className="text-blue-600 dark:text-blue-400 font-medium">
-              {formatPoints(currentPoints)} pts
-            </span>
-          </div>
-          
-          {/* High Score */}
-          <div className="bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg">
-            <span className="text-amber-600 dark:text-amber-400 font-medium">
-              High: {formatPoints(highScore)}
-            </span>
-          </div>
-        </div>
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+          Match each suspect with their crime
+        </p>
         
-        {/* Center: Text String */}
-        <div className="flex-1 text-center">
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Click and match the mugshots to their crimes
-          </p>
-        </div>
-        
-        {/* Right side: Timer, Accuracy, Points */}
-        <div className="flex-1 flex justify-end">
-          <GameStats
-            totalMatches={totalMatches}
-            correctMatches={0}
-            gameStartTime={gameStartTimeRef.current}
-            currentPoints={currentPoints}
-          />
-        </div>
+        {/* Game Stats */}
+        <GameStats 
+          totalMatches={totalMatches}
+          correctMatches={0}
+          gameStartTime={gameStartTimeRef.current}
+          currentPoints={currentPoints}
+        />
       </div>
 
       {/* Progress */}
       <div className="mb-8">
-        <GameProgress totalMatches={totalMatches} />
+        <GameProgress 
+          totalMatches={totalMatches} 
+          maxMatches={shuffledMugshotImages.length}
+        />
       </div>
 
       {/* Game Grid */}
@@ -217,16 +218,7 @@ export default function MugshotMatchingGame() {
                 index={index}
                 isSelected={selectedMugshotId === mugshot.id.toString()}
                 isMatched={!!matches[mugshot.id.toString()]}
-                onClick={() => {
-                  triggerHaptic('light')
-                  
-                  if (selectedDescriptionId) {
-                    handleMatch(mugshot.id.toString(), selectedDescriptionId)
-                  } else {
-                    setSelectedMugshotId(mugshot.id.toString())
-                    setSelectedDescriptionId(null)
-                  }
-                }}
+                onClick={() => handleMugshotClick(mugshot)}
                 results={results}
                 matches={matches}
                 getInmateDataById={getInmateDataById}
@@ -235,36 +227,38 @@ export default function MugshotMatchingGame() {
           </div>
         </div>
 
-        {/* Crimes */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            Crimes
-            {selectedDescriptionId && (
-              <Badge variant="secondary" className="ml-2">
-                Selected
-              </Badge>
-            )}
-          </h2>
-          <div className="space-y-4">
-            {shuffledCrimeDescriptions.map((crime, index) => {
-              const matchedMugshotId = Object.keys(matches).find(key => matches[key] === crime.id.toString())
-              const matchedMugshot = matchedMugshotId ? (getInmateDataById(matchedMugshotId) || null) : null
+        {/* Crimes - Hide on mobile since we use modal */}
+        {!isMobile && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              Crimes
+              {selectedDescriptionId && (
+                <Badge variant="secondary" className="ml-2">
+                  Selected
+                </Badge>
+              )}
+            </h2>
+            <div className="space-y-4">
+              {shuffledCrimeDescriptions.map((crime, index) => {
+                const matchedMugshotId = Object.keys(matches).find(key => matches[key] === crime.id.toString())
+                const matchedMugshot = matchedMugshotId ? (getInmateDataById(matchedMugshotId) || null) : null
 
-              return (
-                <CleanCrimeCard
-                  key={crime.id}
-                  crime={crime}
-                  index={index}
-                  isSelected={selectedDescriptionId === crime.id.toString()}
-                  isMatched={!!matchedMugshot}
-                  matchedMugshot={matchedMugshot}
-                  onClick={() => handleCrimeClickWithMobile(crime)}
-                  results={results}
-                />
-              )
-            })}
+                return (
+                  <CleanCrimeCard
+                    key={crime.id}
+                    crime={crime}
+                    index={index}
+                    isSelected={selectedDescriptionId === crime.id.toString()}
+                    isMatched={!!matchedMugshot}
+                    matchedMugshot={matchedMugshot}
+                    onClick={() => handleCrimeClickWithMobile(crime)}
+                    results={results}
+                  />
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -300,6 +294,18 @@ export default function MugshotMatchingGame() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Crime Selection Modal */}
+      <MobileCrimeModal
+        isOpen={isMobileCrimeModalOpen}
+        onClose={closeMobileCrimeModal}
+        crimes={shuffledCrimeDescriptions}
+        onCrimeSelect={handleMobileCrimeSelect}
+        selectedMugshotId={selectedMugshotForModal?.id.toString()}
+        selectedMugshot={selectedMugshotForModal || undefined}
+        matches={matches}
+        getInmateDataById={getInmateDataById}
+      />
     </div>
   )
 }
