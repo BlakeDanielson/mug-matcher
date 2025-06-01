@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, RotateCcw, Home } from 'lucide-react'
 import { GameResults, Inmate } from './types'
 import { GameHeader } from './game-header'
-import { getSeverityBadge } from '@/lib/crime-severity-utils'
+import { getSeverityAccent } from '@/lib/crime-severity-utils'
 
 interface GameResultsViewProps {
   results: GameResults
@@ -194,7 +194,10 @@ export function GameResultsView({
                           ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20'
                           : 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
                         : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
-                    }`}
+                    } ${(() => {
+                      const severityAccent = getSeverityAccent(crime.crimeSeverity);
+                      return severityAccent.borderLeft;
+                    })()}`}
                   >
                     <div className="flex items-start gap-4">
                       {matchedMugshot && (
@@ -228,12 +231,12 @@ export function GameResultsView({
                           <span className="font-bold text-gray-900 dark:text-white text-sm">
                             {crime.crime}
                           </span>
-                          {/* Crime Severity Badge */}
+                          {/* Crime Severity Accent */}
                           {(() => {
-                            const severityBadge = getSeverityBadge(crime.crimeSeverity);
+                            const severityAccent = getSeverityAccent(crime.crimeSeverity);
                             return (
-                              <span className={severityBadge.className}>
-                                {severityBadge.text}
+                              <span className={`text-xs font-medium ${severityAccent.textAccent} opacity-75`}>
+                                {crime.crimeSeverity || 'Unknown'}
                               </span>
                             );
                           })()}

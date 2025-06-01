@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Inmate, GameResults } from './types';
 import { useTouchTarget } from '@/hooks/use-mobile-interactions';
-import { getSeverityBadge } from '@/lib/crime-severity-utils';
+import { getSeverityCardStyling } from '@/lib/crime-severity-utils';
 
 interface CrimeCardProps {
   crime: Inmate
@@ -29,7 +29,7 @@ export function CleanCrimeCard({
   results
 }: CrimeCardProps) {
   const { touchTargetProps } = useTouchTarget()
-  const severityBadge = getSeverityBadge(crime.crimeSeverity)
+  const severityStyling = getSeverityCardStyling(crime.crimeSeverity, isSelected, isMatched)
   
   return (
     <motion.div
@@ -43,21 +43,31 @@ export function CleanCrimeCard({
     >
       <div className={cn(
         "p-4 rounded-xl border-2 transition-all duration-200 shadow-sm hover:shadow-md min-h-[120px] relative",
-        (isSelected || isMatched) && "border-blue-500 ring-2 ring-blue-200 shadow-lg",
-        !isSelected && !isMatched && "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300"
+        (isSelected || isMatched) 
+          ? "border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800"
+          : severityStyling.cardClassName,
+        !isSelected && !isMatched && "hover:border-gray-300"
       )}>
+        
+        {/* Crime Severity Dot Indicator */}
+        {!isSelected && !isMatched && (
+          <div 
+            className={severityStyling.severityDot.className}
+            title={severityStyling.severityDot.title}
+          />
+        )}
         
         {/* Crime description */}
         <div className="mb-3">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <p className="text-gray-900 dark:text-white font-medium leading-relaxed flex-1">
-              {crime.crime}
+          <p className="text-gray-900 dark:text-white font-medium leading-relaxed pr-6">
+            {crime.crime}
+          </p>
+          {/* Subtle severity text */}
+          {!isSelected && !isMatched && (
+            <p className={cn("mt-1", severityStyling.severityText.className)}>
+              {severityStyling.severityText.text} Severity
             </p>
-            {/* Crime Severity Badge */}
-            <span className={severityBadge.className}>
-              {severityBadge.text}
-            </span>
-          </div>
+          )}
         </div>
 
         {/* Status section */}
