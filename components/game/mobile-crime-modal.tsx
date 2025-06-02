@@ -63,6 +63,10 @@ export function MobileCrimeModal({
                   width={48}
                   height={48}
                   className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg?height=48&width=48&text=" + encodeURIComponent(selectedMugshot.name);
+                  }}
                 />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -111,6 +115,10 @@ export function MobileCrimeModal({
                             width={24}
                             height={24}
                             className="w-6 h-6 rounded-full object-cover border border-blue-500"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder.svg?height=24&width=24&text=" + encodeURIComponent(matchedMugshot.name);
+                            }}
                           />
                           <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                             {matchedMugshot.name}
