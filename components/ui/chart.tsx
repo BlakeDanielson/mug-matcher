@@ -366,3 +366,7 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+// Default export enables easy dynamic import like:
+// const Chart = dynamic(() => import('@/components/ui/chart'));
+export default ChartContainer;
