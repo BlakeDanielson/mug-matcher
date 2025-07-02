@@ -6,7 +6,7 @@ import {
   Tooltip as RechartsTooltip,
   Legend as RechartsLegend,
 } from "recharts"
-import type { TooltipProps, LegendProps } from "recharts"
+import type { LegendProps } from "recharts"
 
 import { cn } from "@/lib/utils"
 
