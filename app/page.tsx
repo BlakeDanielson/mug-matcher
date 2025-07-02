@@ -1,13 +1,11 @@
+"use client"
+
 import dynamic from 'next/dynamic'
 import { GameSkeleton } from '@/components/game'
 // Dynamically load the heavy game component client-side only to reduce the initial bundle
-const MugshotMatchingGame = dynamic(
-  () => import('@/components/mugshot-matching-game'),
-  {
-    ssr: false,
-    loading: () => <GameSkeleton />,
-  }
-)
+const MugshotMatchingGame = dynamic(() => import('@/components/mugshot-matching-game'), {
+  loading: () => <GameSkeleton />,
+})
 
 export default function Home() {
   return (
