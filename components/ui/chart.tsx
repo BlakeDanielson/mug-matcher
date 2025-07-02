@@ -39,12 +39,33 @@ function useChart() {
   return context
 }
 
+// ----- Explicit prop typings -----
+
+export interface ChartContainerProps extends React.ComponentProps<"div"> {
+  /** runtime configuration mapping keys to color/label/icon */
+  config: ChartConfig
+  /** Recharts <ResponsiveContainer> children (usually <LineChart>, etc.) */
+  children: React.ComponentProps<typeof ResponsiveContainer>["children"]
+}
+
+export type ChartTooltipContentProps = React.ComponentProps<typeof RechartsTooltip> &
+  React.ComponentProps<"div"> & {
+    hideLabel?: boolean
+    hideIndicator?: boolean
+    indicator?: "line" | "dot" | "dashed"
+    nameKey?: string
+    labelKey?: string
+  }
+
+export type ChartLegendContentProps = React.ComponentProps<"div"> &
+  Pick<LegendProps, "payload" | "verticalAlign"> & {
+    hideIcon?: boolean
+    nameKey?: string
+  }
+
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    config: ChartConfig
-    children: React.ComponentProps<typeof ResponsiveContainer>["children"]
-  }
+  ChartContainerProps
 >(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
@@ -107,14 +128,7 @@ const ChartTooltip = RechartsTooltip
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsTooltip> &
-    React.ComponentProps<"div"> & {
-      hideLabel?: boolean
-      hideIndicator?: boolean
-      indicator?: "line" | "dot" | "dashed"
-      nameKey?: string
-      labelKey?: string
-    }
+  ChartTooltipContentProps
 >(
   (
     {
@@ -263,11 +277,7 @@ const ChartLegend = RechartsLegend
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean
-      nameKey?: string
-    }
+  ChartLegendContentProps
 >(
   (
     { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },
