@@ -58,7 +58,7 @@ export function MobileCrimeModal({
             {selectedMugshot && (
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center gap-3">
                 <Image
-                  src={selectedMugshot.image}
+                  src={selectedMugshot.image || "/placeholder.svg"}
                   alt={selectedMugshot.name}
                   width={48}
                   height={48}
@@ -110,7 +110,7 @@ export function MobileCrimeModal({
                       {isCurrentlyMatched && matchedMugshot ? (
                         <div className="flex items-center gap-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                           <Image
-                            src={matchedMugshot.image}
+                            src={matchedMugshot.image || "/placeholder.svg"}
                             alt={matchedMugshot.name}
                             width={24}
                             height={24}
