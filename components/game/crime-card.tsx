@@ -77,7 +77,7 @@ export function CleanCrimeCard({
           {matchedMugshot ? (
             <div className="flex items-center gap-2">
               <Image
-                src={matchedMugshot.image}
+                src={matchedMugshot.image || "/placeholder.svg"}
                 alt={matchedMugshot.name}
                 width={24}
                 height={24}
