@@ -31,35 +31,19 @@ let inmateCache: CsvInmate[] | null = null;
  */
 function getCsvFilePath(): string {
   const isProduction = process.env.NODE_ENV === 'production';
-  
-  // Get the CSV path from environment variable with fallback
-  const envPath = process.env.MUGSHOTS_CSV_PATH || 'data/sorted_mugshots.csv';
-  
-  console.log(`[CSV-DB] Environment: ${isProduction ? 'Production' : 'Development'}`);
-  console.log(`[CSV-DB] Current working directory: ${process.cwd()}`);
-  console.log(`[CSV-DB] MUGSHOTS_CSV_PATH: ${envPath}`);
-  
-  // Check if we're in the mug-matcher directory
-  const isInMugMatcherDir = process.cwd().endsWith('mug-matcher');
-  console.log(`[CSV-DB] Is in mug-matcher directory: ${isInMugMatcherDir}`);
-  
-  let csvFilePath: string;
-  
-  if (path.isAbsolute(envPath)) {
-    // Use absolute path as-is
-    csvFilePath = envPath;
-    console.log(`[CSV-DB] Using absolute CSV path: ${csvFilePath}`);
-  } else if (isInMugMatcherDir) {
-    // We're in the mug-matcher directory, use relative path from current directory
-    csvFilePath = path.resolve(process.cwd(), envPath);
-    console.log(`[CSV-DB] Using relative CSV path (from mug-matcher dir): ${csvFilePath}`);
-  } else {
-    // We're not in mug-matcher, assume we need to go up to find it
-    csvFilePath = path.resolve(process.cwd(), '..', envPath);
-    console.log(`[CSV-DB] Using relative CSV path (from parent dir): ${csvFilePath}`);
+
+  // For local development, just use the direct path
+  if (!isProduction) {
+    const localPath = path.resolve(process.cwd(), 'data/sorted_mugshots.csv');
+    console.log(`[CSV-DB] Development mode - Using direct path: ${localPath}`);
+    return localPath;
   }
-  
-  return csvFilePath;
+
+  // For production, use environment variable
+  const envPath = process.env.MUGSHOTS_CSV_PATH || 'data/sorted_mugshots.csv';
+  console.log(`[CSV-DB] Production mode - Using env path: ${envPath}`);
+
+  return path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath);
 }
 
 /**
