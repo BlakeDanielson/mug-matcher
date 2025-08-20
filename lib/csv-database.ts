@@ -25,25 +25,33 @@ let inmateCache: CsvInmate[] | null = null;
 
 /**
  * Get the path to the CSV file
- * Handles both development and production (Render) environments
+ * Simple approach: use direct path for development, env variable for production
  * @returns The resolved path to the CSV file
  * @throws Error if the path cannot be resolved
  */
 function getCsvFilePath(): string {
   const isProduction = process.env.NODE_ENV === 'production';
-
-  // For local development, just use the direct path
-  if (!isProduction) {
-    const localPath = path.resolve(process.cwd(), 'data/sorted_mugshots.csv');
-    console.log(`[CSV-DB] Development mode - Using direct path: ${localPath}`);
-    return localPath;
+  
+  let csvFilePath: string;
+  
+  if (isProduction) {
+    // Production: use environment variable (required for Render)
+    const envPath = process.env.MUGSHOTS_CSV_PATH;
+    if (!envPath) {
+      throw new Error('MUGSHOTS_CSV_PATH environment variable is required in production');
+    }
+    csvFilePath = path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath);
+    console.log(`[CSV-DB] Production - Using CSV path from env: ${csvFilePath}`);
+  } else {
+    // Development: use direct path relative to project root
+    csvFilePath = path.resolve(process.cwd(), 'data/sorted_mugshots.csv');
+    console.log(`[CSV-DB] Development - Using direct CSV path: ${csvFilePath}`);
   }
-
-  // For production, use environment variable
-  const envPath = process.env.MUGSHOTS_CSV_PATH || 'data/sorted_mugshots.csv';
-  console.log(`[CSV-DB] Production mode - Using env path: ${envPath}`);
-
-  return path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath);
+  
+  console.log(`[CSV-DB] Environment: ${isProduction ? 'Production' : 'Development'}`);
+  console.log(`[CSV-DB] Current working directory: ${process.cwd()}`);
+  
+  return csvFilePath;
 }
 
 /**
