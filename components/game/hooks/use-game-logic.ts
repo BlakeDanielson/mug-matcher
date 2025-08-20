@@ -44,13 +44,37 @@ export function useGameLogic() {
     gameStartTimeRef.current = Date.now()
   }, [])
 
-  // Reset game function that uses current inmates state
-  const resetGame = useCallback(() => {
-    shuffleGameData(inmates)
-    // Reset mobile state
-    setIsMobileCrimeModalOpen(false)
-    setSelectedMugshotForModal(null)
-  }, [inmates, shuffleGameData])
+  // Reset game function that fetches new inmates
+  const resetGame = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/inmates')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const inmatesArray = data.inmates || data
+      
+      if (!Array.isArray(inmatesArray) || inmatesArray.length === 0) {
+        throw new Error('No inmate data received')
+      }
+      
+      setInmates(inmatesArray)
+      shuffleGameData(inmatesArray)
+      
+      // Reset mobile state
+      setIsMobileCrimeModalOpen(false)
+      setSelectedMugshotForModal(null)
+    } catch (err) {
+      console.error('Error fetching new inmates:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load new game data')
+    } finally {
+      setLoading(false)
+    }
+  }, [shuffleGameData])
 
   // Fetch inmate data from the API - removed resetGame dependency
   useEffect(() => {

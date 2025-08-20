@@ -105,8 +105,8 @@ export default function MugshotMatchingGame() {
   }
 
   // Enhanced reset function that includes points reset
-  const handleReset = () => {
-    resetGame()
+  const handleReset = async () => {
+    await resetGame()
     resetPoints()
   }
 
@@ -171,7 +171,7 @@ export default function MugshotMatchingGame() {
   const totalMatches = Object.values(matches).filter(match => match !== null).length
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-8xl mx-auto p-2 sm:p-3 lg:p-4">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -199,7 +199,7 @@ export default function MugshotMatchingGame() {
       </div>
 
       {/* Game Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-8 lg:items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:items-start">
         {/* Mugshots */}
         <div className="space-y-6 h-full">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">

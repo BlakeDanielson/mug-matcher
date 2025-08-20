@@ -74,23 +74,21 @@ export function CleanCrimeCard({
 
         {/* Status section */}
         <div className="flex items-center justify-between">
-          {matchedMugshot ? (
-            <div className="flex items-center gap-2">
-              <Image
-                src={matchedMugshot.image || "/placeholder.svg"}
-                alt={matchedMugshot.name}
-                width={24}
-                height={24}
-                className="w-6 h-6 rounded-full object-cover border border-blue-500"
-              />
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                {matchedMugshot.name}
-              </span>
-            </div>
-          ) : (
+          {!matchedMugshot && (
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Select a mugshot
             </span>
+          )}
+          {matchedMugshot && (
+            <div className="ml-auto">
+              <Image
+                src={matchedMugshot.image || "/placeholder.svg"}
+                alt={matchedMugshot.name}
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
+              />
+            </div>
           )}
         </div>
 
