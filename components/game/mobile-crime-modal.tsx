@@ -40,7 +40,7 @@ export function MobileCrimeModal({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 500 }}
-            className="w-full bg-white dark:bg-gray-900 rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto"
+            className="w-full bg-white dark:bg-gray-900 rounded-t-3xl p-6 min-h-[70vh] max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
