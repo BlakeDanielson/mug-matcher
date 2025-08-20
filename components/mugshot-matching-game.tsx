@@ -210,7 +210,7 @@ export default function MugshotMatchingGame() {
               </Badge>
             )}
           </h2>
-          <div className="grid grid-cols-2 gap-5 h-full content-start">
+          <div className="grid grid-cols-2 gap-4 h-full content-start">
             {shuffledMugshotImages.map((mugshot, index) => (
               <CleanMugshotCard
                 key={mugshot.id}
@@ -238,7 +238,7 @@ export default function MugshotMatchingGame() {
                 </Badge>
               )}
             </h2>
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               {shuffledCrimeDescriptions.map((crime, index) => {
                 const matchedMugshotId = Object.keys(matches).find(key => matches[key] === crime.id.toString())
                 const matchedMugshot = matchedMugshotId ? (getInmateDataById(matchedMugshotId) || null) : null

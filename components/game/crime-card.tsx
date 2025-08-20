@@ -42,7 +42,7 @@ export function CleanCrimeCard({
       {...touchTargetProps}
     >
       <div className={cn(
-        "p-4 rounded-xl border-2 transition-all duration-200 min-h-[120px] relative",
+        "p-3 rounded-xl border-2 transition-all duration-200 aspect-square relative flex flex-col justify-between shadow-sm hover:shadow-md min-w-[120px] w-full max-w-[320px]",
         (isSelected || isMatched) 
           ? "border-blue-500 ring-2 ring-blue-200 shadow-lg bg-white dark:bg-gray-800 hover:shadow-xl"
           : cn(
@@ -60,37 +60,30 @@ export function CleanCrimeCard({
         )}
         
         {/* Crime description */}
-        <div className="mb-3">
-          <p className="text-gray-900 dark:text-white font-medium leading-relaxed pr-6">
+        <div className="flex-1 flex flex-col justify-center">
+          <p className="text-gray-900 dark:text-white font-medium leading-tight text-sm pr-6">
             {crime.crime}
           </p>
           {/* Subtle severity text */}
           {!isSelected && !isMatched && (
-            <p className={cn("mt-1", severityStyling.severityText.className)}>
+            <p className={cn("mt-1 text-xs", severityStyling.severityText.className)}>
               {severityStyling.severityText.text} Severity
             </p>
           )}
         </div>
 
         {/* Status section */}
-        <div className="flex items-center justify-between">
-          {!matchedMugshot && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Select a mugshot
-            </span>
-          )}
-          {matchedMugshot && (
-            <div className="ml-auto">
-              <Image
-                src={matchedMugshot.image || "/placeholder.svg"}
-                alt={matchedMugshot.name}
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
-              />
-            </div>
-          )}
-        </div>
+        {matchedMugshot && (
+          <div className="flex justify-end mt-2">
+            <Image
+              src={matchedMugshot.image || "/placeholder.svg"}
+              alt={matchedMugshot.name}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full object-cover border-2 border-blue-500"
+            />
+          </div>
+        )}
 
         {/* Selection indicator */}
         <AnimatePresence>
